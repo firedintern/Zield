@@ -1,0 +1,19 @@
+{
+  "name": "zield",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Risk-aware yield vault optimizer on Base",
+  "scripts": {
+    "keeper": "cd keeper && npm run dev",
+    "keeper:dry-run": "cd keeper && npm run dry-run",
+    "keeper:execute": "cd keeper && npm run execute",
+    "keeper:real": "cd keeper && VAULT_ADDRESS=$VAULT_ADDRESS npm run dev",
+    "frontend": "cd frontend && npm run dev",
+    "contracts:validate": "cd contracts && npx hardhat run scripts/test-rebalance-flow.ts",
+    "dev": "concurrently \"npm run keeper\" \"npm run frontend\"",
+    "build": "cd frontend && npm run build && cd ../contracts && npm run compile"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

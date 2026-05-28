@@ -3,6 +3,8 @@
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useState, useEffect } from 'react';
 import { ArrowUpRight, Shield, Zap, RefreshCw, AlertTriangle } from 'lucide-react';
+import { SimulationModal } from '../components/SimulationModal';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseUnits, formatUnits } from 'viem';
 import { ZIELD_CONFIG, isVaultConfigured } from '../lib/config';
@@ -99,8 +101,10 @@ export default function ZieldDashboard() {
   const [decision, setDecision] = useState<KeeperDecision | null>(null);
   const [loading, setLoading] = useState(true);
   const [depositAmount, setDepositAmount] = useState('1000');
+  const [withdrawAmount, setWithdrawAmount] = useState('');
   const [isApproving, setIsApproving] = useState(false);
   const [isDepositing, setIsDepositing] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   const [simulationReport, setSimulationReport] = useState<any>(null);
   const [isSimulating, setIsSimulating] = useState(false);
@@ -262,27 +266,27 @@ export default function ZieldDashboard() {
     }
   }
 
-  // Basic withdraw handler (redeem shares for USDC)
+  // Proper withdraw handler (no more ugly prompt)
   async function handleWithdraw() {
-    if (!address || !vaultReady) return;
+    if (!address || !vaultReady || !withdrawAmount) return;
 
-    const withdrawShares = prompt('Enter amount of zUSDC to withdraw (e.g. 100):');
-    if (!withdrawShares) return;
+    const sharesInUnits = parseUnits(withdrawAmount, 6);
 
-    const sharesInUnits = parseUnits(withdrawShares, 6);
-
+    setIsWithdrawing(true);
     try {
       const hash = await writeContractAsync({
         address: ZIELD_CONFIG.vaultAddress,
         abi: VAULT_ABI,
-        functionName: 'redeem', // Standard ERC4626
+        functionName: 'redeem',
         args: [sharesInUnits, address, address],
       });
       setTxHash(hash);
-      alert('Withdraw transaction sent!');
+      setWithdrawAmount(''); // clear after success
     } catch (err) {
       console.error('Withdraw failed', err);
-      alert('Withdraw failed. Check that you have enough shares and the vault has liquidity.');
+      alert('Withdraw failed. Make sure you have enough shares and the vault has sufficient liquidity.');
+    } finally {
+      setIsWithdrawing(false);
     }
   }
 
@@ -294,59 +298,79 @@ export default function ZieldDashboard() {
   const usdcBalanceFormatted = usdcBalance ? formatUnits(usdcBalance, 6) : '0';
   const userSharesFormatted = userShares ? formatUnits(userShares, 6) : '0';
 
+  // Data for allocation pie chart
+  const pieData = decision.decisions.map((d, index) => ({
+    name: d.name,
+    value: d.target,
+    color: d.color,
+  }));
+
   return (
-    <div className="min-h-screen bg-zinc-950 text-white">
-      {/* Header */}
-      <header className="border-b border-white/10 bg-zinc-950/80 backdrop-blur-xl sticky top-0 z-50">
+    <div className="min-h-screen bg-[var(--z-bg-0)] text-[var(--z-text-primary)]">
+      {/* Header - Premium minimal */}
+      <header className="border-b border-[var(--z-border)] bg-[var(--z-bg-0)]/95 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
-              <span className="text-zinc-950 font-bold text-xl tracking-[-2px]">Z</span>
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center">
+                <span className="text-[var(--z-bg-0)] font-semibold text-[21px] tracking-[-2.5px] leading-none mt-[-1px]">Z</span>
+              </div>
+              <div>
+                <div className="font-semibold tracking-[-1.5px] text-[21px]">Zield</div>
+              </div>
             </div>
-            <div>
-              <div className="font-semibold tracking-tight text-xl">Zield</div>
-              <div className="text-[10px] text-zinc-500 -mt-1">RISK-AWARE YIELD</div>
-            </div>
+            <div className="ml-1 px-2 py-0.5 rounded-md bg-white/5 text-[10px] font-medium tracking-[1px] text-white/40">BETA</div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-xs border ${isOnCorrectNetwork ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-red-500/10 border-red-500/30 text-red-400'}`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${isOnCorrectNetwork ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
-              {isOnCorrectNetwork ? 'Base Sepolia' : 'Wrong Network'}
+          <div className="flex items-center gap-3">
+            <div className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-xs border transition-colors ${isOnCorrectNetwork ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${isOnCorrectNetwork ? 'bg-emerald-400' : 'bg-red-400'}`} />
+              {isOnCorrectNetwork ? 'Base Sepolia' : 'Switch Network'}
             </div>
             <ConnectButton />
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Hero Stats */}
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
-          <div>
-            <div className="text-sm text-zinc-400 tracking-widest">BASE • LIVE KEEPER</div>
-            <h1 className="text-6xl font-semibold tracking-[-3.5px] mt-1">Risk-Adjusted Yield</h1>
-            <p className="text-xl text-zinc-400 mt-2 max-w-md">
+      <div className="max-w-7xl mx-auto px-6 py-10">
+        {/* Hero + Overview — Stronger hierarchy, more premium */}
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-x-12 gap-y-6 mb-10">
+          <div className="max-w-[520px]">
+            <div className="uppercase tracking-[2px] text-[11px] text-[var(--z-text-tertiary)] mb-2">BASE • LIVE KEEPER</div>
+            <h1 className="text-[52px] leading-[1.05] font-semibold tracking-[-4.2px]">Risk-Adjusted<br />Yield</h1>
+            <p className="mt-3 text-[17px] text-[var(--z-text-secondary)] max-w-[42ch]">
               The keeper that refuses to chase raw APY when risk is high.
             </p>
+
+            {!isConnected && (
+              <div className="mt-5 text-sm text-[var(--z-text-secondary)]">
+                Connect your wallet to start earning risk-aware yield.
+              </div>
+            )}
           </div>
 
-          <div className="flex gap-8">
+          {/* Key Metrics — more premium treatment */}
+          <div className="flex gap-12">
             <div>
-              <div className="text-sm text-zinc-400">Blended APY</div>
-              <div className="text-6xl font-semibold tabular-nums tracking-[-2px] text-emerald-400">
-                {decision.blendedAPY}<span className="text-3xl">%</span>
+              <div className="z-label mb-1.5">Blended APY</div>
+              <div className="text-[52px] leading-none font-semibold tracking-[-3px] text-[var(--z-accent)] z-number">
+                {decision.blendedAPY}<span className="text-3xl align-super">%</span>
               </div>
             </div>
             <div>
-              <div className="text-sm text-zinc-400">Portfolio Risk</div>
-              <div className="text-6xl font-semibold tabular-nums tracking-[-2px]">{decision.portfolioRisk}</div>
-              <div className="text-xs text-emerald-400">LOW • Well diversified</div>
+              <div className="z-label mb-1.5 flex items-center gap-1.5">
+                Portfolio Risk <span className="text-[10px] opacity-60">(lower = safer)</span>
+              </div>
+              <div className="text-[52px] leading-none font-semibold tracking-[-3px] z-number">
+                {decision.portfolioRisk}
+              </div>
+              <div className="mt-1 text-sm text-[var(--z-accent)]">Low risk • Well diversified</div>
             </div>
           </div>
         </div>
 
-        {/* Keeper Recommendation Banner */}
-        <div className="mb-8 rounded-3xl border border-white/10 bg-zinc-900 p-6">
+        {/* Keeper Recommendation — The emotional and intellectual center of the product */}
+        <div className="mb-10 rounded-3xl border border-[var(--z-border-strong)] bg-[var(--z-bg-1)] p-7 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2 text-emerald-400 text-sm font-medium">
               <Zap className="w-4 h-4" /> KEEPER RECOMMENDATION — LIVE
@@ -370,62 +394,99 @@ export default function ZieldDashboard() {
               </button>
             </div>
           </div>
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
             <div>
-              <div className="text-xs text-zinc-400">EXPECTED 7-DAY PROFIT</div>
-              <div className="text-4xl font-semibold tabular-nums mt-1">+${decision.expected7dProfit.toLocaleString()}</div>
+              <div className="z-label mb-1">Expected 7-Day Profit</div>
+              <div className="text-[42px] leading-none font-semibold tracking-[-2.5px] text-[var(--z-accent)] z-number">
+                +${decision.expected7dProfit.toLocaleString()}
+              </div>
             </div>
             <div>
-              <div className="text-xs text-zinc-400">GAS COST</div>
-              <div className="text-4xl font-semibold tabular-nums mt-1 text-amber-400">${decision.gasCost}</div>
+              <div className="z-label mb-1">Gas Cost (est.)</div>
+              <div className="text-[42px] leading-none font-semibold tracking-[-2.5px] text-[var(--z-warning)] z-number">
+                ${decision.gasCost}
+              </div>
             </div>
             <div>
-              <div className="text-xs text-zinc-400">NET BENEFIT</div>
-              <div className="text-4xl font-semibold tabular-nums mt-1 text-emerald-400">{decision.netBenefitX}x</div>
+              <div className="z-label mb-1">Net Benefit</div>
+              <div className="text-[42px] leading-none font-semibold tracking-[-2.5px] text-[var(--z-accent)] z-number">
+                {decision.netBenefitX}<span className="text-2xl align-super">×</span>
+              </div>
             </div>
-            <div className="flex items-end">
-              <div className="text-sm text-zinc-400">
-                Rebalance would be highly profitable right now. All safety gates passed.
+            <div className="flex items-end pb-1">
+              <div className="text-[15px] leading-snug text-[var(--z-text-secondary)] max-w-[26ch]">
+                Strong risk-adjusted opportunity. All safety gates passed.
               </div>
             </div>
           </div>
         </div>
 
         <div className="grid lg:grid-cols-5 gap-6">
-          {/* Allocation Breakdown */}
-          <div className="lg:col-span-3 rounded-3xl border border-white/10 bg-zinc-900 p-6">
+          {/* Allocation Breakdown + Pie Chart */}
+          <div className="lg:col-span-3 z-card p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="font-medium flex items-center gap-2">
                 <Shield className="w-4 h-4" /> Current Allocation (Risk-Capped)
               </div>
-              <div className="text-xs px-2 py-1 rounded bg-white/5 border border-white/10">TVL ${ (decision.tvlUsd / 1e6).toFixed(1) }M</div>
+              <div className="text-xs px-2 py-1 rounded bg-white/5 border border-white/10">TVL ${(decision.tvlUsd / 1e6).toFixed(1)}M</div>
             </div>
 
-            <div className="space-y-4">
-              {decision.decisions.map((strat, i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <div className="w-36 text-sm font-medium text-white/90 truncate">{strat.name}</div>
-                  <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full rounded-full transition-all" 
-                      style={{ width: `${strat.target}%`, backgroundColor: strat.color }}
-                    />
+            <div className="grid md:grid-cols-5 gap-8">
+              {/* Bars */}
+              <div className="md:col-span-3 space-y-4">
+                {decision.decisions.map((strat, i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <div className="w-36 text-sm font-medium text-white/90 truncate">{strat.name}</div>
+                    <div className="flex-1 h-2.5 bg-white/10 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full rounded-full transition-all" 
+                        style={{ width: `${strat.target}%`, backgroundColor: strat.color }}
+                      />
+                    </div>
+                    <div className="w-12 text-right font-mono text-sm font-medium">{strat.target}%</div>
+                    <div className="w-28 text-right text-xs text-zinc-400">
+                      {strat.apy}% APY • Risk {strat.risk}
+                    </div>
                   </div>
-                  <div className="w-12 text-right font-mono text-sm">{strat.target}%</div>
-                  <div className="w-28 text-right text-xs text-zinc-400">
-                    {strat.apy}% APY • Risk {strat.risk}
-                  </div>
+                ))}
+                <div className="text-[10px] text-zinc-500 pt-2">
+                  High-risk bucket capped at 40%. The keeper avoids extreme APY pools.
                 </div>
-              ))}
-            </div>
+              </div>
 
-            <div className="mt-6 text-[10px] text-zinc-500">
-              High-risk bucket capped at 40%. The keeper is deliberately avoiding insane 200%+ APY Aerodrome farms shown in live data.
+              {/* Pie Chart */}
+              <div className="md:col-span-2 h-52">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={85}
+                      dataKey="value"
+                      paddingAngle={3}
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#18181b', 
+                        border: '1px solid #3f3f46',
+                        borderRadius: '8px',
+                        color: 'white'
+                      }} 
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
 
           {/* Deposit / Withdraw */}
-          <div className="lg:col-span-2 rounded-3xl border border-white/10 bg-zinc-900 p-6 flex flex-col">
+          <div className="lg:col-span-2 z-card p-7 flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="font-medium">Deposit USDC</div>
               {isConnected && (
@@ -508,25 +569,55 @@ export default function ZieldDashboard() {
                 : "Deploy the vault on Sepolia to enable real deposits."}
             </div>
 
-            {/* Basic Withdraw (skeleton - functional on testnet after deposit) */}
+            {/* Withdraw - now properly user-friendly */}
             <div className="mt-8 pt-6 border-t border-white/10">
-              <div className="text-sm font-medium mb-3 text-white/70">Withdraw</div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm font-medium text-white/80">Withdraw zUSDC</div>
+                {parseFloat(userSharesFormatted) > 0 && (
+                  <button
+                    onClick={() => setWithdrawAmount(userSharesFormatted)}
+                    className="text-[10px] text-emerald-400 hover:text-emerald-300"
+                  >
+                    Max
+                  </button>
+                )}
+              </div>
+
               <div className="flex gap-3">
-                <input
-                  type="number"
-                  placeholder="zUSDC amount"
-                  className="flex-1 bg-black border border-white/20 rounded-2xl px-4 py-3 text-xl focus:outline-none"
-                  disabled={!isConnected || parseFloat(userSharesFormatted) === 0}
-                />
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    value={withdrawAmount}
+                    onChange={(e) => setWithdrawAmount(e.target.value)}
+                    placeholder="0.00"
+                    disabled={!isConnected || parseFloat(userSharesFormatted) === 0 || !vaultReady || !isOnCorrectNetwork}
+                    className="w-full bg-black border border-white/20 rounded-2xl px-4 py-3 text-xl focus:outline-none focus:border-white/40 disabled:opacity-50"
+                  />
+                  <div className="absolute right-4 top-3.5 text-sm text-zinc-500">zUSDC</div>
+                </div>
+
                 <button
                   onClick={handleWithdraw}
-                  disabled={!isConnected || parseFloat(userSharesFormatted) === 0 || !vaultReady || !isOnCorrectNetwork}
-                  className="px-6 rounded-2xl border border-white/20 hover:bg-white/5 disabled:opacity-50"
+                  disabled={
+                    !isConnected ||
+                    !withdrawAmount ||
+                    parseFloat(withdrawAmount) <= 0 ||
+                    !vaultReady ||
+                    !isOnCorrectNetwork ||
+                    isWithdrawing
+                  }
+                  className="px-8 rounded-2xl bg-white/10 hover:bg-white/15 active:bg-white/20 border border-white/20 text-sm font-medium disabled:opacity-50 transition"
                 >
-                  Withdraw
+                  {isWithdrawing ? 'Withdrawing...' : 'Withdraw'}
                 </button>
               </div>
-              <div className="text-[10px] text-zinc-500 mt-2">You currently hold ≈ {parseFloat(userSharesFormatted).toFixed(2)} zUSDC</div>
+
+              <div className="mt-2 flex items-center justify-between text-[10px]">
+                <span className="text-zinc-500">
+                  You hold ≈ {parseFloat(userSharesFormatted).toFixed(2)} zUSDC
+                </span>
+                <span className="text-zinc-500">1 zUSDC ≈ 1 USDC (plus any accrued yield)</span>
+              </div>
             </div>
           </div>
         </div>

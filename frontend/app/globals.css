@@ -1,8 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Zield Design Tokens - Premium Dark DeFi */
+  --z-bg-0: #0A0A0C;
+  --z-bg-1: #111113;
+  --z-bg-2: #1A1A1D;
+
+  --z-text-primary: #F4F4F5;
+  --z-text-secondary: #A1A1AA;
+  --z-text-tertiary: #71717A;
+
+  --z-accent: #22C55E;
+  --z-warning: #F59E0B;
+  --z-danger: #EF4444;
+  --z-info: #3B82F6;
+
+  --z-border: #27272A;
+  --z-border-strong: #3F3F46;
+
+  --z-radius: 16px;
+  --z-radius-sm: 12px;
+
+  /* Base */
+  --background: var(--z-bg-0);
+  --foreground: var(--z-text-primary);
 }
 
 @theme inline {
@@ -12,15 +33,34 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+body {
+  background: var(--z-bg-0);
+  color: var(--z-text-primary);
+  font-family: var(--font-geist-sans);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Premium DeFi component helpers */
+.z-card {
+  background-color: var(--z-bg-1);
+  border: 1px solid var(--z-border);
+  border-radius: var(--z-radius);
+}
+
+.z-surface {
+  background-color: var(--z-bg-2);
+  border: 1px solid var(--z-border);
+  border-radius: var(--z-radius-sm);
+}
+
+.z-number {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-geist-mono);
+}
+
+.z-label {
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--z-text-tertiary);
+  font-weight: 500;
 }

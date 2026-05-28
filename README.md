@@ -2,6 +2,10 @@
 
 **Zield** is a yield optimization vault that actively reallocates capital across DeFi strategies to maximize **risk-adjusted returns**, not raw APY.
 
+![Zield Dashboard](screenshots/zield-dashboard.png)
+
+*Live dashboard showing the keeper’s current risk-adjusted recommendation, portfolio allocation, and deposit/withdraw experience.*
+
 This repository contains the **doable MVP** implementation. All longer-term multichain, intent-based, insurance-wrapped, and on-chain optimization ideas have been deliberately moved to [ZIELD_VISION_PLANS_AND_ROADMAP.md](./ZIELD_VISION_PLANS_AND_ROADMAP.md).
 
 ## Current MVP Scope (What We're Actually Shipping First)

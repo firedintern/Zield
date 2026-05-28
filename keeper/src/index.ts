@@ -8,6 +8,7 @@ import { fetchAaveUsdcSupplyApyBps } from './data/aave.js';
 import { fetchTopBaseStableYields } from './data/defillama.js';
 import { KEEPER_CONFIG } from './config.js';
 import { readVaultState, vaultStateToSnapshots } from './vault-reader.js';
+import { logger } from './logger.js';
 import type { StrategySnapshot, PortfolioSnapshot } from './types.js';
 import 'dotenv/config';
 

@@ -15,6 +15,7 @@ import { KEEPER_CONFIG } from './config.js';
 import { readVaultState, vaultStateToSnapshots } from './vault-reader.js';
 import { runOptimizer } from './optimize.js';
 import { shouldExecuteRebalance } from './simulation.js';
+import { alert } from './alert.js';
 import 'dotenv/config';
 
 const VAULT_ABI = parseAbi([
@@ -64,12 +65,25 @@ async function main() {
   if (!proceed) {
     console.log('\n❌ EXECUTION BLOCKED by safety gates.');
     report.reasons.forEach(r => console.log('   -', r));
+
+    await alert.warning('Rebalance Blocked', 'Preflight failed. Execution prevented.', {
+      vault: vaultAddress,
+      reasons: report.reasons.join('; '),
+    });
+
     process.exit(1);
   }
 
   console.log('\n✅ All safety gates PASSED.');
   console.log(`   Expected 7-day profit: $${report.expected7DayProfitUsd}`);
   console.log(`   Gas cost: $${report.estimatedGasUsd} (${report.netBenefitRatio}x benefit)`);
+
+  await alert.success('Rebalance Preflight Passed', 'All safety gates cleared. Preparing to execute.', {
+    vault: vaultAddress,
+    expectedProfit: report.expected7DayProfitUsd,
+    gasCost: report.estimatedGasUsd,
+    netBenefit: report.netBenefitRatio,
+  });
 
   // === 4. Confirmation gate ===
   if (!forceYes) {
@@ -115,9 +129,21 @@ async function main() {
     console.log(`   Explorer: https://${chain.id === 84532 ? 'sepolia.' : ''}basescan.org/tx/${hash}`);
     console.log('\nMonitor the transaction. The keeper will not send another rebalance until cooldown passes.');
 
+    await alert.success('Rebalance Executed', 'Transaction sent successfully.', {
+      vault: vaultAddress,
+      txHash: hash,
+      expectedProfit: report.expected7DayProfitUsd,
+    });
+
   } catch (err: any) {
     console.error('\n❌ Transaction failed:');
     console.error(err?.shortMessage || err?.message || err);
+
+    await alert.error('Rebalance Execution Failed', err?.message || 'Unknown error', {
+      vault: vaultAddress,
+      error: String(err),
+    });
+
     process.exit(1);
   }
 }

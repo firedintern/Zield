@@ -104,20 +104,26 @@ The model parameters live in the keeper service (versioned) and can be updated w
 
 ## Run It Right Now (Current State)
 
-**Keeper (live data + optimizer + safety gates)**
+**TypeScript Keeper (recommended)**
 ```bash
 cd keeper && npm run dev
+npm run dry-run
+npm run execute
 ```
 
-**Dry Run (recommended before any execution)**
+See [keeper/RUN_AS_SERVICE.md](./keeper/RUN_AS_SERVICE.md) for production deployment guides (Docker, Docker Compose, PM2, systemd).
+
+**Python Keeper (MVP reference implementation)**
 ```bash
-cd keeper && VAULT_ADDRESS=0xYourVault npm run dry-run
+cd keeper-python
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+
+python -m src.main dry-run
+python -m src.main execute
 ```
 
-**Execute Rebalance (heavily guarded)**
-```bash
-cd keeper && VAULT_ADDRESS=0xYourVault KEEPER_PRIVATE_KEY=0x... npm run execute
-```
+Both keepers implement the same risk-adjusted rebalancing philosophy and safety model. The TypeScript version is more mature and production-ready. The Python version is a solid reference implementation with real execution + on-chain simulation.
 
 **Frontend Dashboard**
 ```bash

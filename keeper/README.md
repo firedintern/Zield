@@ -36,12 +36,16 @@ VAULT_ADDRESS=0xYourVault KEEPER_PRIVATE_KEY=0x... npm run execute
 - Requires typing `YES` (or `--yes` flag)
 - Only the `execute.ts` file is allowed to call `rebalance()` on the vault
 
+## Production Deployment
+
+See [RUN_AS_SERVICE.md](./RUN_AS_SERVICE.md) for Docker, PM2, and systemd instructions.
+
 ## Next Work (in order)
 
 1. More real data sources (Morpho, Aerodrome bribes, etc.)
 2. Strategy registry / on-chain configuration
 3. Better simulation using local anvil forks for higher fidelity
-4. Monitoring, alerting, and 24/7 runner (PM2 / Docker / systemd)
+4. Real Prometheus metrics + alerting
 5. Backtesting framework
 6. Governance / risk parameter management UI
 

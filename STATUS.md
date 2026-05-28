@@ -165,3 +165,73 @@ The project has reached an excellent "demo-ready" state:
 - Use beautiful frontend to deposit, simulate decisions, see real historical activity, and (with key) execute guarded rebalances.
 
 This is a complete, credible risk-aware yield optimizer with transparency at its core.
+
+## Python Keeper + TS Keeper Productionization (Added 2026-05-28)
+
+**Track A - Python Keeper (MVP)**
+- Full directory: `keeper-python/`
+- Core logic ported: Risk model, Optimizer, Preflight
+- CLI with `dry-run` and `execute` commands
+- Mirrors TypeScript architecture for consistency
+- Ready for real web3.py transaction sending
+
+**Track B - TypeScript Keeper Productionization**
+- Added `Dockerfile`
+- Added `docker-compose.yml`
+- Added `ecosystem.config.js` (PM2)
+- Added structured logger stub + health check server (`/health`)
+- Ready for containerized / monitored deployment
+
+Both keepers now exist and can be referenced when answering "Design and maintain Python/TypeScript bots for rebalancing".
+
+## 2026-05-28 Update: Python Keeper Now Has Real Execution
+
+- Python keeper can now actually send `rebalance()` transactions on-chain using web3.py.
+- The `execute` command is now functional (still has the same confirmation gate philosophy as the TS version).
+- This significantly strengthens our ability to claim we have working Python + TypeScript rebalancing bots.
+
+## 2026-05-28 Update: TS Keeper Productionization (Item 4)
+
+- Significantly improved Dockerfile (multi-stage build, non-root user, better production defaults)
+- Improved docker-compose.yml with proper healthchecks and networking
+- Created comprehensive `RUN_AS_SERVICE.md` covering:
+  - Docker (recommended)
+  - PM2
+  - systemd
+  - Security and monitoring notes
+- Updated both keeper/README.md and root README with deployment guidance
+
+This gives us a credible story for "maintaining" the TypeScript bot in production.
+
+## 2026-05-28 Update: Monitoring & Alerting Hooks (Item 3)
+
+- Created `src/alert.ts` — clean webhook alerting module (supports Discord/Slack/generic)
+- Integrated alerting into:
+  - Successful rebalance execution
+  - Blocked executions (preflight failures)
+  - Transaction failures
+  - High gas cost warnings
+  - Simulation failures
+- Enhanced health server with `/metrics` endpoint (uptime + memory)
+- Updated documentation in RUN_AS_SERVICE.md
+
+The TS keeper now has credible production monitoring and alerting capabilities.
+
+## 2026-05-28 Update: Real On-Chain Simulation in Python (Item 2)
+
+- Added `src/simulator.py` with real `eth_call` based simulation of `rebalance()`.
+- Integrated simulation into the `execute` command flow (runs after economic preflight).
+- The Python keeper now has multi-layer preflight similar to the TypeScript version:
+  1. Economic checks (profit vs gas)
+  2. On-chain simulation (catches reverts)
+  3. Explicit confirmation
+- This makes the Python bot's safety story much stronger.
+
+## 2026-05-28 Final Update: Python Tests (Item 5)
+
+- Added `tests/test_optimizer.py` with basic but meaningful tests for:
+  - Risk scoring
+  - Risk-adjusted scoring
+  - Optimizer respecting hard risk caps
+- Tests are runnable with pytest.
+- The full approved plan (all 5 items) is now complete.

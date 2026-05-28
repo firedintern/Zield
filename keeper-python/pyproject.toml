@@ -1,0 +1,17 @@
+[project]
+name = "zield-keeper-python"
+version = "0.1.0"
+description = "Python port of Zield Keeper - Risk-aware rebalancing automation"
+requires-python = ">=3.10"
+dependencies = [
+    "web3>=6.20.1",
+    "python-dotenv>=1.0.1",
+    "pydantic>=2.8.2",
+    "rich>=13.7.1",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "ruff>=0.5.0",
+    "mypy>=1.10.0",
+]

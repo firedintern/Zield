@@ -2,6 +2,7 @@ import { createPublicClient, http, parseAbi, type Address, type PublicClient, fo
 import { base } from 'viem/chains';
 import { KEEPER_CONFIG } from './config.js';
 import type { OptimizerOutput } from './types.js';
+import { alert } from './alert.js';
 
 const VAULT_ABI = parseAbi([
   'function rebalance() external',
@@ -59,6 +60,11 @@ export async function runPreflight(
   const gasCostUsd = proposed.estimatedGasCostUsd;
   if (gasCostUsd > KEEPER_CONFIG.MAX_GAS_COST_USD) {
     reasons.push(`Gas cost too high: $${gasCostUsd} > max $${KEEPER_CONFIG.MAX_GAS_COST_USD}`);
+
+    await alert.warning('High Gas Cost Detected', `Gas cost $${gasCostUsd} exceeds threshold`, {
+      vault: vaultAddress,
+      gasCost: gasCostUsd,
+    });
   }
 
   // === 3. Simulate the actual rebalance call ===
@@ -74,6 +80,10 @@ export async function runPreflight(
     simulationSuccess = false;
     revertReason = err?.shortMessage || err?.message || 'Unknown revert';
     reasons.push(`On-chain simulation failed: ${revertReason}`);
+
+    await alert.warning('On-chain Simulation Failed', revertReason || 'Unknown revert during simulation', {
+      vault: vaultAddress,
+    });
   }
 
   // === 4. Calculate expected economics ===

@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  zield-keeper:
+    build: .
+    container_name: zield-keeper
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - BASE_MAINNET_RPC=${BASE_MAINNET_RPC:-https://mainnet.base.org}
+      - VAULT_ADDRESS=${VAULT_ADDRESS}
+      - KEEPER_PRIVATE_KEY=${KEEPER_PRIVATE_KEY}
+      - HEALTH_PORT=3001
+    ports:
+      - "3001:3001"   # Health check endpoint
+    volumes:
+      - ./logs:/app/logs
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - zield-network
+
+networks:
+  zield-network:
+    driver: bridge

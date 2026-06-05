@@ -2,6 +2,8 @@
 
 **Zield** is a yield optimization vault that actively reallocates capital across DeFi strategies to maximize **risk-adjusted returns**, not raw APY.
 
+Built with Grok
+
 ![Zield Dashboard](screenshots/zield-dashboard.png)
 
 *Live dashboard showing the keeper’s current risk-adjusted recommendation, portfolio allocation, and deposit/withdraw experience.*

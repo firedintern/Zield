@@ -1,27 +1,41 @@
 @import "tailwindcss";
 
 :root {
-  /* Zield Design Tokens - Premium Dark DeFi */
-  --z-bg-0: #0A0A0C;
-  --z-bg-1: #111113;
-  --z-bg-2: #1A1A1D;
+  /* ── Zield Design Tokens v2 — calm, premium, trustworthy ───────── */
 
-  --z-text-primary: #F4F4F5;
-  --z-text-secondary: #A1A1AA;
-  --z-text-tertiary: #71717A;
+  /* Surfaces */
+  --z-bg-0: #0a0b0f;
+  --z-bg-1: #0e1015;
+  --z-bg-2: #13151c;
 
-  --z-accent: #22C55E;
-  --z-warning: #F59E0B;
-  --z-danger: #EF4444;
-  --z-info: #3B82F6;
+  /* Text */
+  --z-text-primary: #f5f6f7;
+  --z-text-secondary: #9ba1ad;
+  --z-text-tertiary: #5d6470;
 
-  --z-border: #27272A;
-  --z-border-strong: #3F3F46;
+  /* Accent — refined emerald/teal */
+  --z-accent: #2dd4a7;
+  --z-accent-dim: #10b981;
+  --z-accent-soft: rgba(45, 212, 167, 0.1);
 
-  --z-radius: 16px;
+  /* Risk scale (low → critical) */
+  --z-risk-1: #34d399;
+  --z-risk-2: #a3e635;
+  --z-risk-3: #fbbf24;
+  --z-risk-4: #fb923c;
+  --z-risk-5: #f87171;
+
+  --z-warning: #fbbf24;
+  --z-danger: #f87171;
+  --z-info: #60a5fa;
+
+  /* Hairlines */
+  --z-border: rgba(255, 255, 255, 0.06);
+  --z-border-strong: rgba(255, 255, 255, 0.1);
+
+  --z-radius: 20px;
   --z-radius-sm: 12px;
 
-  /* Base */
   --background: var(--z-bg-0);
   --foreground: var(--z-text-primary);
 }
@@ -34,33 +48,157 @@
 }
 
 body {
-  background: var(--z-bg-0);
+  background-color: var(--z-bg-0);
   color: var(--z-text-primary);
   font-family: var(--font-geist-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Premium DeFi component helpers */
+/* Ambient backdrop: faint emerald glow + ultra-subtle grid */
+.z-backdrop {
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(45, 212, 167, 0.07), transparent 70%),
+    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 100% 100%, 64px 64px, 64px 64px;
+}
+
+/* ── Cards ──────────────────────────────────────────────────────── */
+
 .z-card {
-  background-color: var(--z-bg-1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
   border: 1px solid var(--z-border);
   border-radius: var(--z-radius);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 12px 32px -16px rgba(0, 0, 0, 0.5);
 }
 
-.z-surface {
-  background-color: var(--z-bg-2);
-  border: 1px solid var(--z-border);
+.z-card-hero {
+  background:
+    radial-gradient(ellipse 60% 120% at 50% -20%, rgba(45, 212, 167, 0.08), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.012));
+  border: 1px solid rgba(45, 212, 167, 0.14);
+  border-radius: var(--z-radius);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 16px 48px -20px rgba(0, 0, 0, 0.6);
+}
+
+.z-inset {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--z-radius-sm);
 }
 
-.z-number {
+/* ── Type helpers ───────────────────────────────────────────────── */
+
+.z-num {
   font-variant-numeric: tabular-nums;
-  font-family: var(--font-geist-mono);
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.02em;
 }
 
 .z-label {
   font-size: 11px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--z-text-tertiary);
   font-weight: 500;
 }
+
+/* ── Buttons ────────────────────────────────────────────────────── */
+
+.z-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 999px;
+  font-weight: 500;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
+  cursor: pointer;
+}
+.z-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.z-btn:active:not(:disabled) { transform: scale(0.98); }
+
+.z-btn-ghost {
+  border: 1px solid var(--z-border-strong);
+  color: var(--z-text-secondary);
+  background: rgba(255, 255, 255, 0.02);
+}
+.z-btn-ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.06); color: var(--z-text-primary); }
+
+.z-btn-accent {
+  border: 1px solid rgba(45, 212, 167, 0.3);
+  color: var(--z-accent);
+  background: var(--z-accent-soft);
+}
+.z-btn-accent:hover:not(:disabled) { background: rgba(45, 212, 167, 0.18); }
+
+.z-btn-primary {
+  background: linear-gradient(180deg, #3ce0b4, #19c79a);
+  color: #04110c;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 24px -10px rgba(45, 212, 167, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+.z-btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
+
+.z-btn-solid {
+  background: #f5f6f7;
+  color: #0a0b0f;
+  border: 1px solid transparent;
+}
+.z-btn-solid:hover:not(:disabled) { background: #ffffff; }
+
+/* ── Focus / a11y ───────────────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid rgba(45, 212, 167, 0.6);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ── Motion ─────────────────────────────────────────────────────── */
+
+@keyframes z-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.z-fade-up { animation: z-fade-up 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.z-d1 { animation-delay: 0.05s; }
+.z-d2 { animation-delay: 0.1s; }
+.z-d3 { animation-delay: 0.16s; }
+.z-d4 { animation-delay: 0.22s; }
+
+@keyframes z-shimmer {
+  from { background-position: -400px 0; }
+  to { background-position: 400px 0; }
+}
+.z-skeleton {
+  border-radius: 10px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
+  background-size: 800px 100%;
+  animation: z-shimmer 1.4s linear infinite;
+}
+
+@keyframes z-pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(45, 212, 167, 0.45); }
+  50% { box-shadow: 0 0 0 5px rgba(45, 212, 167, 0); }
+}
+.z-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--z-accent);
+  animation: z-pulse-dot 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .z-fade-up, .z-skeleton, .z-live-dot { animation: none; }
+}
+
+/* Hide number input spinners (amount fields) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }

@@ -646,14 +646,13 @@ export default function ZieldDashboard() {
 
                 <div className="z-inset relative">
                   <input
-                    type="number"
+                    type="text"
                     inputMode="decimal"
-                    min="0"
-                    step="any"
+                    pattern="[0-9]*\.?[0-9]*"
                     value={depositAmount}
                     onChange={(e) => {
                       const v = e.target.value;
-                      if (v === '' || parseFloat(v) >= 0) setDepositAmount(v);
+                      if (/^(\d*\.?\d*)$/.test(v)) setDepositAmount(v);
                     }}
                     disabled={!isConnected || !isOnCorrectNetwork}
                     aria-label="Deposit amount in USDC"
@@ -715,10 +714,14 @@ export default function ZieldDashboard() {
                   <div className="flex gap-2.5">
                     <div className="z-inset relative flex-1">
                       <input
-                        type="number"
+                        type="text"
                         inputMode="decimal"
+                        pattern="[0-9]*\.?[0-9]*"
                         value={withdrawAmount}
-                        onChange={(e) => setWithdrawAmount(e.target.value)}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (/^(\d*\.?\d*)$/.test(v)) setWithdrawAmount(v);
+                        }}
                         placeholder="0.00"
                         disabled={!isConnected || parseFloat(userSharesFormatted) === 0 || !isOnCorrectNetwork}
                         aria-label="Withdraw amount in zUSDC shares"

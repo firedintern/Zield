@@ -23,6 +23,8 @@ const VAULT_ABI = [
   { name: 'deposit', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'assets', type: 'uint256' }, { name: 'receiver', type: 'address' }], outputs: [{ name: 'shares', type: 'uint256' }] },
   { name: 'redeem', type: 'function', stateMutability: 'nonpayable', inputs: [{ name: 'shares', type: 'uint256' }, { name: 'receiver', type: 'address' }, { name: 'owner', type: 'address' }], outputs: [{ name: 'assets', type: 'uint256' }] },
   { name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
+  { name: 'totalAssets', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+  { name: 'totalSupply', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
 ] as const;
 
 /* ── Types (mirror lib/engine.ts) ─────────────────────────────────── */
@@ -204,6 +206,16 @@ export default function ZieldDashboard() {
     args: address ? [address] : undefined, query: { enabled: !!address && vaultReady },
   });
 
+  const { data: onchainTotalAssets, refetch: refetchTotalAssets } = useReadContract({
+    address: ZIELD_CONFIG.vaultAddress, abi: VAULT_ABI, functionName: 'totalAssets',
+    query: { enabled: vaultReady, refetchInterval: 15_000 },
+  });
+
+  const { data: onchainTotalSupply } = useReadContract({
+    address: ZIELD_CONFIG.vaultAddress, abi: VAULT_ABI, functionName: 'totalSupply',
+    query: { enabled: vaultReady, refetchInterval: 15_000 },
+  });
+
   const amountInUnits = parseUnits(depositAmount || '0', 6);
   const needsApproval = allowance !== undefined && amountInUnits > allowance;
 
@@ -248,8 +260,9 @@ export default function ZieldDashboard() {
       setTxHash(undefined);
       refetchAllowance();
       refetchShares();
+      refetchTotalAssets();
     }
-  }, [isTxSuccess, refetchAllowance, refetchShares]);
+  }, [isTxSuccess, refetchAllowance, refetchShares, refetchTotalAssets]);
 
   async function handleApprove() {
     if (!address || !vaultReady) return;
@@ -382,6 +395,12 @@ export default function ZieldDashboard() {
   const usdcBalanceFormatted = usdcBalance ? formatUnits(usdcBalance, 6) : '0';
   const userSharesFormatted = userShares ? formatUnits(userShares, 6) : '0';
 
+  // On-chain TVL — overrides keeper decision's vaultTvlUsd when available
+  const onchainTvlUsd = onchainTotalAssets !== undefined
+    ? Number(formatUnits(onchainTotalAssets, 6))
+    : null;
+  const displayTvl = onchainTvlUsd ?? decision?.vaultTvlUsd ?? null;
+
   return (
     <div className="z-backdrop min-h-screen text-[var(--z-text-primary)]">
       {header}
@@ -472,7 +491,7 @@ export default function ZieldDashboard() {
             <div className="sm:pr-6">
               <div className="z-label mb-2 flex items-center gap-1.5">
                 <Landmark className="h-3 w-3" />
-                Est. 30-day earnings {decision.vaultTvlUsd === null && <span className="normal-case opacity-70">(per $10k)</span>}
+                Est. 30-day earnings {displayTvl === null && <span className="normal-case opacity-70">(per $10k)</span>}
               </div>
               <div className="z-num font-mono text-[38px] font-semibold leading-none text-[var(--z-accent)]">
                 +${decision.est30dEarningsPer10k.toLocaleString(undefined, { maximumFractionDigits: 0 })}
@@ -510,8 +529,8 @@ export default function ZieldDashboard() {
                 Target allocation
               </div>
               <div className="rounded-full border border-[var(--z-border)] bg-white/[0.03] px-3 py-1 text-[11px] text-[var(--z-text-secondary)]">
-                {decision.vaultTvlUsd !== null
-                  ? `TVL $${decision.vaultTvlUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                {displayTvl !== null
+                  ? `TVL $${displayTvl.toLocaleString(undefined, { maximumFractionDigits: 2 })}`
                   : 'Vault not yet live'}
               </div>
             </div>

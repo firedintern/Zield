@@ -1,45 +1,15 @@
 'use client';
 
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { useState, useEffect, useCallback } from 'react';
 import {
   ArrowUpRight, Shield, Zap, RefreshCw, ChevronDown, Radar,
   Flame, CheckCircle2, XCircle, Landmark, Lock, ExternalLink,
 } from 'lucide-react';
-import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt, useConnect, useDisconnect } from 'wagmi';
+import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseUnits, formatUnits } from 'viem';
 import { toast } from 'sonner';
 import { ZIELD_CONFIG, isVaultConfigured } from '../lib/config';
-
-/* ── Wallet button (bypasses RainbowKit discovery) ───────────────── */
-
-function WalletButton({ variant = 'primary' }: { variant?: 'primary' | 'ghost' }) {
-  const { address, isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect();
-
-  if (isConnected && address) {
-    return (
-      <button
-        onClick={() => disconnect()}
-        className={`z-btn ${variant === 'primary' ? 'z-btn-primary' : 'z-btn-ghost'} px-4 py-2 text-sm`}
-      >
-        {address.slice(0, 6)}…{address.slice(-4)}
-      </button>
-    );
-  }
-
-  // Pick the first available connector (MetaMask via EIP-6963, then injected fallback)
-  const connector = connectors[0];
-  return (
-    <button
-      onClick={() => connector && connect({ connector })}
-      disabled={!connector}
-      className={`z-btn ${variant === 'primary' ? 'z-btn-primary' : 'z-btn-ghost'} px-4 py-2 text-sm`}
-    >
-      Connect Wallet
-    </button>
-  );
-}
 
 /* ── ABIs ─────────────────────────────────────────────────────────── */
 
@@ -385,7 +355,7 @@ export default function ZieldDashboard() {
               {isOnCorrectNetwork ? 'Base Sepolia' : 'Wrong network'}
             </div>
           )}
-          <WalletButton variant="ghost" />
+          <ConnectButton showBalance={false} accountStatus={{ smallScreen: 'avatar', largeScreen: 'full' }} />
         </div>
       </div>
     </header>
@@ -659,7 +629,7 @@ export default function ZieldDashboard() {
                   </div>
                 )}
 
-                {!isConnected && <div className="mt-5"><WalletButton /></div>}
+                {!isConnected && <div className="mt-5"><ConnectButton /></div>}
               </div>
             ) : (
               /* Live deposit flow */
@@ -711,7 +681,7 @@ export default function ZieldDashboard() {
                 <div className="flex-1" />
 
                 {!isConnected ? (
-                  <div className="mt-6"><WalletButton /></div>
+                  <div className="mt-6"><ConnectButton /></div>
                 ) : needsApproval ? (
                   <button
                     onClick={handleApprove}

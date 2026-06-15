@@ -2,28 +2,49 @@
 
 import { WagmiProvider, createConfig, http } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
-import { injected, metaMask } from 'wagmi/connectors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
+import {
+  RainbowKitProvider,
+  connectorsForWallets,
+  darkTheme,
+} from '@rainbow-me/rainbowkit';
+import {
+  metaMaskWallet,
+  injectedWallet,
+  braveWallet,
+  walletConnectWallet,
+  rainbowWallet,
+} from '@rainbow-me/rainbowkit/wallets';
 import '@rainbow-me/rainbowkit/styles.css';
 
-const RPC_BASE = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org';
-const RPC_SEPOLIA = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org';
+const WC_PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+const HAS_WC = !!WC_PROJECT_ID && WC_PROJECT_ID.length === 32 && WC_PROJECT_ID !== 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
-// metaMask() targets MetaMask via EIP-6963 rdns "io.metamask".
-// injected() is the fallback for any other injected provider.
-// Both are listed so RainbowKit always shows wallet options instead of
-// the "What is a Wallet?" onboarding screen.
-const config = createConfig({
-  connectors: [
-    metaMask({ dappMetadata: { name: 'Zield', url: 'https://zield-nu.vercel.app' } }),
-    injected({ target: 'metaMask' }),
-    injected(),
+const connectors = connectorsForWallets(
+  [
+    {
+      groupName: 'Installed',
+      wallets: [
+        metaMaskWallet,
+        injectedWallet,
+        braveWallet,
+        // Only include WalletConnect wallets when a valid project ID exists
+        ...(HAS_WC ? [walletConnectWallet, rainbowWallet] : []),
+      ],
+    },
   ],
+  {
+    appName: 'Zield',
+    projectId: WC_PROJECT_ID || '00000000000000000000000000000000',
+  }
+);
+
+const config = createConfig({
+  connectors,
   chains: [baseSepolia, base],
   transports: {
-    [base.id]: http(RPC_BASE),
-    [baseSepolia.id]: http(RPC_SEPOLIA),
+    [base.id]: http(process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org'),
+    [baseSepolia.id]: http(process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org'),
   },
   ssr: true,
 });

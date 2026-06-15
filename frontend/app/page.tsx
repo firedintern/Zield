@@ -185,6 +185,7 @@ export default function ZieldDashboard() {
 
   const [activities, setActivities] = useState<any[]>([]);
   const [activitiesIsDemo, setActivitiesIsDemo] = useState(true);
+  const [vaultState, setVaultState] = useState<any>(null);
 
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
@@ -245,12 +246,24 @@ export default function ZieldDashboard() {
     }
   }, []);
 
+  const fetchVaultState = useCallback(async () => {
+    try {
+      const res = await fetch('/api/vault-state');
+      const data = await res.json();
+      if (data.configured && !data.error) setVaultState(data);
+    } catch {}
+  }, []);
+
   useEffect(() => {
     fetchKeeperDecision();
     fetchRecentActivity();
-    const interval = setInterval(fetchKeeperDecision, 150_000);
+    fetchVaultState();
+    const interval = setInterval(() => {
+      fetchKeeperDecision();
+      fetchVaultState();
+    }, 150_000);
     return () => clearInterval(interval);
-  }, [fetchKeeperDecision, fetchRecentActivity]);
+  }, [fetchKeeperDecision, fetchRecentActivity, fetchVaultState]);
 
   useEffect(() => {
     if (isTxSuccess) {
@@ -536,28 +549,51 @@ export default function ZieldDashboard() {
               </div>
             </div>
 
-            {/* Segmented allocation bar */}
-            <div className="mb-2 flex h-3 w-full gap-[3px] overflow-hidden rounded-full" role="img" aria-label="Allocation split">
-              {decision.allocations.map((a, i) => (
-                <div
-                  key={a.project}
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{ width: `${a.targetPct}%`, background: ALLOCATION_PALETTE[i % ALLOCATION_PALETTE.length] }}
-                />
-              ))}
-            </div>
-            <div className="mb-6 flex flex-wrap gap-x-5 gap-y-1.5">
-              {decision.allocations.map((a, i) => (
-                <span key={a.project} className="inline-flex items-center gap-1.5 text-[11px] text-[var(--z-text-tertiary)]">
-                  <span className="h-2 w-2 rounded-[3px]" style={{ background: ALLOCATION_PALETTE[i % ALLOCATION_PALETTE.length] }} />
-                  {a.name} · <span className="z-num font-mono">{a.targetPct}%</span>
-                </span>
-              ))}
-            </div>
+            {/* Segmented allocation bar — real on-chain when available, optimizer otherwise */}
+            {vaultState?.strategies?.length > 0 ? (
+              <>
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="rounded-full border border-[rgba(45,212,167,0.25)] bg-[rgba(45,212,167,0.07)] px-2 py-0.5 text-[10px] font-medium text-[var(--z-accent)]">On-chain</span>
+                  <span className="text-[11px] text-[var(--z-text-tertiary)]">Actual vault allocation</span>
+                </div>
+                <div className="mb-2 flex h-3 w-full gap-[3px] overflow-hidden rounded-full" role="img" aria-label="On-chain allocation split">
+                  {vaultState.strategies.map((s: any, i: number) => (
+                    <div key={s.address} className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${s.targetPct}%`, background: ALLOCATION_PALETTE[i % ALLOCATION_PALETTE.length] }} />
+                  ))}
+                </div>
+                <div className="mb-6 flex flex-wrap gap-x-5 gap-y-1.5">
+                  {vaultState.strategies.map((s: any, i: number) => (
+                    <span key={s.address} className="inline-flex items-center gap-1.5 text-[11px] text-[var(--z-text-tertiary)]">
+                      <span className="h-2 w-2 rounded-[3px]" style={{ background: ALLOCATION_PALETTE[i % ALLOCATION_PALETTE.length] }} />
+                      {s.name} · <span className="z-num font-mono">{s.targetPct.toFixed(0)}%</span>
+                    </span>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mb-2 flex h-3 w-full gap-[3px] overflow-hidden rounded-full" role="img" aria-label="Allocation split">
+                  {decision.allocations.map((a, i) => (
+                    <div key={a.project} className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${a.targetPct}%`, background: ALLOCATION_PALETTE[i % ALLOCATION_PALETTE.length] }} />
+                  ))}
+                </div>
+                <div className="mb-6 flex flex-wrap gap-x-5 gap-y-1.5">
+                  {decision.allocations.map((a, i) => (
+                    <span key={a.project} className="inline-flex items-center gap-1.5 text-[11px] text-[var(--z-text-tertiary)]">
+                      <span className="h-2 w-2 rounded-[3px]" style={{ background: ALLOCATION_PALETTE[i % ALLOCATION_PALETTE.length] }} />
+                      {a.name} · <span className="z-num font-mono">{a.targetPct}%</span>
+                    </span>
+                  ))}
+                </div>
+              </>
+            )}
 
             {/* Strategy rows */}
             <div className="space-y-1.5">
               {decision.allocations.map((strat, i) => {
+                const onchainStrat = vaultState?.strategies?.find((s: any) => s.targetPct === strat.targetPct);
                 const expanded = expandedStrategy === strat.project;
                 return (
                   <div key={strat.project} className={`rounded-2xl border transition-colors duration-200 ${expanded ? 'border-[var(--z-border-strong)] bg-white/[0.03]' : 'border-transparent hover:bg-white/[0.025]'}`}>
@@ -573,7 +609,9 @@ export default function ZieldDashboard() {
                           {strat.tvlUsd > 0 ? `Pool TVL $${(strat.tvlUsd / 1e6).toFixed(1)}M` : 'On-chain read'}
                         </span>
                       </span>
-                      <span className="z-num hidden font-mono text-sm text-[var(--z-accent)] sm:block">{strat.apy.toFixed(2)}%</span>
+                      <span className="z-num hidden font-mono text-sm text-[var(--z-accent)] sm:block">
+                        {onchainStrat ? (onchainStrat.apyBps / 100).toFixed(2) : strat.apy.toFixed(2)}%
+                      </span>
                       <RiskPill value={strat.compositeRisk} />
                       <span className="z-num w-12 text-right font-mono text-sm font-semibold">{strat.targetPct}%</span>
                       <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-[var(--z-text-tertiary)] transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
@@ -801,7 +839,7 @@ export default function ZieldDashboard() {
               {activities.map((act, i) => {
                 const isDeposit = act.type === 'deposit';
                 const isWithdraw = act.type === 'withdraw';
-                const isRebalance = !isDeposit && !isWithdraw;
+                void (!isDeposit && !isWithdraw); // isRebalance — used for label derivation above
                 const label = isDeposit ? 'Deposit' : isWithdraw ? 'Withdrawal' : 'Rebalance';
                 const amountUsd = isDeposit || isWithdraw
                   ? (act.assets / 1e6).toFixed(2)

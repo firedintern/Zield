@@ -26,6 +26,8 @@ const VAULT_ABI = [
   { name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'account', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
   { name: 'totalAssets', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
   { name: 'totalSupply', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+  { name: 'strategies', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'uint256' }], outputs: [{ name: '', type: 'address' }] },
+  { name: 'targetAllocationBps', type: 'function', stateMutability: 'view', inputs: [{ name: '', type: 'address' }], outputs: [{ name: '', type: 'uint16' }] },
 ] as const;
 
 /* ── Types (mirror lib/engine.ts) ─────────────────────────────────── */
@@ -786,7 +788,7 @@ export default function ZieldDashboard() {
         {/* ── Activity ───────────────────────────────────────────── */}
         <section className="z-card mt-6 p-6 sm:p-7">
           <div className="mb-4 flex items-center justify-between">
-            <div className="text-sm font-medium">Recent keeper activity</div>
+            <div className="text-sm font-medium">Vault activity</div>
             {activitiesIsDemo && (
               <span className="rounded-full border border-[rgba(251,191,36,0.25)] bg-[rgba(251,191,36,0.07)] px-2.5 py-0.5 text-[10px] font-medium text-[var(--z-warning)]">
                 Demo data
@@ -797,15 +799,31 @@ export default function ZieldDashboard() {
           {activities.length > 0 ? (
             <div className="space-y-2">
               {activities.map((act, i) => {
-                const profit = act.profit || act.totalAssetsAfter - act.totalAssetsBefore;
+                const isDeposit = act.type === 'deposit';
+                const isWithdraw = act.type === 'withdraw';
+                const isRebalance = !isDeposit && !isWithdraw;
+                const label = isDeposit ? 'Deposit' : isWithdraw ? 'Withdrawal' : 'Rebalance';
+                const amountUsd = isDeposit || isWithdraw
+                  ? (act.assets / 1e6).toFixed(2)
+                  : ((act.profit ?? 0) / 1e6).toFixed(2);
+                const amountColor = isWithdraw
+                  ? 'text-[var(--z-danger)]'
+                  : 'text-[var(--z-accent)]';
+                const prefix = isWithdraw ? '−' : '+';
+                const sender = act.sender
+                  ? `${act.sender.slice(0, 6)}…${act.sender.slice(-4)}`
+                  : null;
+
                 return (
                   <div key={i} className="z-inset flex items-center justify-between px-4 py-3 text-xs">
                     <div>
-                      <div className="font-medium text-[var(--z-text-primary)]">Rebalance executed</div>
+                      <div className="font-medium text-[var(--z-text-primary)]">
+                        {label}{sender ? <span className="ml-1.5 font-normal text-[var(--z-text-tertiary)]">by {sender}</span> : null}
+                      </div>
                       <div className="mt-0.5 text-[var(--z-text-tertiary)]">{new Date(act.timestamp).toLocaleString()}</div>
                     </div>
                     <div className="text-right">
-                      <div className="z-num font-mono font-medium text-[var(--z-accent)]">+${(profit / 1e6).toFixed(0)}</div>
+                      <div className={`z-num font-mono font-medium ${amountColor}`}>{prefix}${amountUsd}</div>
                       {act.txHash && (
                         <a
                           href={`https://${ZIELD_CONFIG.chainId === 84532 ? 'sepolia.' : ''}basescan.org/tx/${act.txHash}`}
@@ -822,7 +840,7 @@ export default function ZieldDashboard() {
               })}
             </div>
           ) : (
-            <p className="text-xs text-[var(--z-text-tertiary)]">No rebalances yet. Deploy a vault and run the keeper to see activity here.</p>
+            <p className="text-xs text-[var(--z-text-tertiary)]">No on-chain activity yet.</p>
           )}
         </section>
 

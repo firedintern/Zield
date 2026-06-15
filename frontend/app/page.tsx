@@ -267,11 +267,16 @@ export default function ZieldDashboard() {
       // Step 1: approve if needed
       if (needsApproval) {
         toast('Step 1 of 2 — Approve USDC', { description: 'Confirm the spending approval in your wallet.' });
-        const approveHash = await writeContractAsync({
-          address: ZIELD_CONFIG.usdcAddress, abi: USDC_ABI, functionName: 'approve',
-          args: [ZIELD_CONFIG.vaultAddress, amountInUnits],
-        });
-        // Wait for approval to confirm before depositing
+        let approveHash: `0x${string}`;
+        try {
+          approveHash = await writeContractAsync({
+            address: ZIELD_CONFIG.usdcAddress, abi: USDC_ABI, functionName: 'approve',
+            args: [ZIELD_CONFIG.vaultAddress, amountInUnits],
+          });
+        } catch {
+          toast.error('Approval rejected.', { description: 'Please approve USDC spending to continue.' });
+          return;
+        }
         const { waitForTransactionReceipt } = await import('wagmi/actions');
         await waitForTransactionReceipt(wagmiConfig, { hash: approveHash });
         await refetchAllowance();
@@ -286,7 +291,7 @@ export default function ZieldDashboard() {
       setTxHash(hash);
       toast('Deposit submitted', { description: 'Your zUSDC shares will arrive on confirmation.' });
     } catch {
-      toast.error('Deposit failed or was rejected.');
+      toast.error('Deposit rejected.', { description: 'The deposit transaction was cancelled.' });
     } finally {
       setIsDepositing(false);
     }
@@ -643,8 +648,13 @@ export default function ZieldDashboard() {
                   <input
                     type="number"
                     inputMode="decimal"
+                    min="0"
+                    step="any"
                     value={depositAmount}
-                    onChange={(e) => setDepositAmount(e.target.value)}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === '' || parseFloat(v) >= 0) setDepositAmount(v);
+                    }}
                     disabled={!isConnected || !isOnCorrectNetwork}
                     aria-label="Deposit amount in USDC"
                     className="z-num w-full bg-transparent px-5 py-5 font-mono text-4xl font-semibold tracking-tight outline-none placeholder:text-[var(--z-text-tertiary)] disabled:opacity-50"

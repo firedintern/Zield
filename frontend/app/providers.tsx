@@ -1,55 +1,21 @@
 'use client';
 
-import { WagmiProvider } from 'wagmi';
+import { WagmiProvider, createConfig, http } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
+import { metaMask } from 'wagmi/connectors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import {
-  RainbowKitProvider,
-  darkTheme,
-  connectorsForWallets,
-} from '@rainbow-me/rainbowkit';
-import {
-  metaMaskWallet,
-  injectedWallet,
-  rainbowWallet,
-  walletConnectWallet,
-} from '@rainbow-me/rainbowkit/wallets';
-import { createConfig, http } from 'wagmi';
+import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
-
-const WC_PROJECT_ID = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 
 const RPC_BASE = process.env.NEXT_PUBLIC_BASE_RPC || 'https://mainnet.base.org';
 const RPC_SEPOLIA = process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC || 'https://sepolia.base.org';
 
-// Build wallet list — WalletConnect connectors require a real project ID.
-// Without one, only injected/MetaMask/Coinbase are offered so the modal
-// doesn't stall on an invalid WC handshake.
-function buildWallets() {
-  const injected = [
-    injectedWallet,
-    metaMaskWallet,
-  ];
-  if (WC_PROJECT_ID) {
-    return [
-      ...injected,
-      rainbowWallet,
-      walletConnectWallet,
-    ];
-  }
-  return injected;
-}
-
-const connectors = connectorsForWallets(
-  [{ groupName: 'Connect wallet', wallets: buildWallets() }],
-  {
-    appName: 'Zield',
-    projectId: WC_PROJECT_ID || 'placeholder',
-  }
-);
-
+// metaMask() connector uses EIP-6963 rdns "io.metamask" — targets MetaMask's
+// specific provider even when Brave Wallet also injects window.ethereum.
 const config = createConfig({
-  connectors,
+  connectors: [
+    metaMask({ dappMetadata: { name: 'Zield', url: 'https://zield-nu.vercel.app' } }),
+  ],
   chains: [baseSepolia, base],
   transports: {
     [base.id]: http(RPC_BASE),

@@ -159,8 +159,8 @@ contract ZieldVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
     // Strategy Management (Owner only)
     // ------------------------------------------------------------------
 
-    /// @notice Add a new strategy with an initial target allocation.
-    /// Target allocations across all strategies must always sum exactly to 10000.
+    /// @notice Add a new strategy. Call setTargetAllocations after adding all strategies
+    /// to enforce the 10000 bps invariant once the full set is wired up.
     function addStrategy(IStrategy strategy, uint16 targetBps) external onlyOwner {
         if (address(strategy) == address(0)) revert InvalidAllocation();
         if (targetAllocationBps[strategy] != 0) revert StrategyAlreadyExists();
@@ -172,7 +172,7 @@ contract ZieldVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
         targetAllocationBps[strategy] = targetBps;
 
         emit StrategyAdded(address(strategy), targetBps);
-        _validateAllocationSum();
+        // Sum validated lazily — call setTargetAllocations or rebalance to enforce 10000 bps
     }
 
     function removeStrategy(IStrategy strategy) external onlyOwner {

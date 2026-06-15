@@ -6,7 +6,8 @@ import {
   ArrowUpRight, Shield, Zap, RefreshCw, ChevronDown, Radar,
   Flame, CheckCircle2, XCircle, Landmark, Lock, ExternalLink,
 } from 'lucide-react';
-import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useChainId, useReadContract, useWriteContract, useWaitForTransactionReceipt, useConfig } from 'wagmi';
+
 import { parseUnits, formatUnits } from 'viem';
 import { toast } from 'sonner';
 import { ZIELD_CONFIG, isVaultConfigured } from '../lib/config';
@@ -172,7 +173,6 @@ export default function ZieldDashboard() {
   const [loading, setLoading] = useState(true);
   const [depositAmount, setDepositAmount] = useState('1000');
   const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [isApproving, setIsApproving] = useState(false);
   const [isDepositing, setIsDepositing] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [expandedStrategy, setExpandedStrategy] = useState<string | null>(null);
@@ -215,6 +215,7 @@ export default function ZieldDashboard() {
   const needsApproval = allowance !== undefined && amountInUnits > allowance;
 
   const { writeContractAsync } = useWriteContract();
+  const wagmiConfig = useConfig();
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>();
   const { isLoading: isTxPending, isSuccess: isTxSuccess } = useWaitForTransactionReceipt({ hash: txHash });
 
@@ -259,27 +260,25 @@ export default function ZieldDashboard() {
     }
   }, [isTxSuccess, refetchAllowance, refetchShares, refetchTotalAssets]);
 
-  async function handleApprove() {
-    if (!address || !vaultReady) return;
-    setIsApproving(true);
-    try {
-      const hash = await writeContractAsync({
-        address: ZIELD_CONFIG.usdcAddress, abi: USDC_ABI, functionName: 'approve',
-        args: [ZIELD_CONFIG.vaultAddress, amountInUnits],
-      });
-      setTxHash(hash);
-      toast('Approval submitted', { description: 'Waiting for confirmation…' });
-    } catch {
-      toast.error('Approval failed or was rejected in your wallet.');
-    } finally {
-      setIsApproving(false);
-    }
-  }
-
   async function handleDeposit() {
     if (!address || !vaultReady) return;
     setIsDepositing(true);
     try {
+      // Step 1: approve if needed
+      if (needsApproval) {
+        toast('Step 1 of 2 — Approve USDC', { description: 'Confirm the spending approval in your wallet.' });
+        const approveHash = await writeContractAsync({
+          address: ZIELD_CONFIG.usdcAddress, abi: USDC_ABI, functionName: 'approve',
+          args: [ZIELD_CONFIG.vaultAddress, amountInUnits],
+        });
+        // Wait for approval to confirm before depositing
+        const { waitForTransactionReceipt } = await import('wagmi/actions');
+        await waitForTransactionReceipt(wagmiConfig, { hash: approveHash });
+        await refetchAllowance();
+        toast('Step 2 of 2 — Deposit USDC', { description: 'Confirm the deposit in your wallet.' });
+      }
+
+      // Step 2: deposit
       const hash = await writeContractAsync({
         address: ZIELD_CONFIG.vaultAddress, abi: VAULT_ABI, functionName: 'deposit',
         args: [amountInUnits, address],
@@ -287,7 +286,7 @@ export default function ZieldDashboard() {
       setTxHash(hash);
       toast('Deposit submitted', { description: 'Your zUSDC shares will arrive on confirmation.' });
     } catch {
-      toast.error('Deposit failed. Check your USDC balance and network.');
+      toast.error('Deposit failed or was rejected.');
     } finally {
       setIsDepositing(false);
     }
@@ -682,21 +681,13 @@ export default function ZieldDashboard() {
 
                 {!isConnected ? (
                   <div className="mt-6"><ConnectButton /></div>
-                ) : needsApproval ? (
-                  <button
-                    onClick={handleApprove}
-                    disabled={isApproving || isTxPending || !isOnCorrectNetwork}
-                    className="z-btn z-btn-solid mt-6 w-full rounded-2xl py-3.5 text-sm font-semibold"
-                  >
-                    {isApproving || isTxPending ? 'Approving…' : 'Approve USDC'}
-                  </button>
                 ) : (
                   <button
                     onClick={handleDeposit}
                     disabled={isDepositing || isTxPending || !isOnCorrectNetwork || parseFloat(depositAmount) <= 0}
                     className="z-btn z-btn-primary mt-6 w-full rounded-2xl py-3.5 text-sm font-semibold"
                   >
-                    {isDepositing || isTxPending ? 'Depositing…' : 'Deposit USDC'}
+                    {isDepositing && needsApproval ? 'Approving…' : isDepositing || isTxPending ? 'Depositing…' : needsApproval ? 'Approve & Deposit' : 'Deposit USDC'}
                     <ArrowUpRight className="h-4 w-4" />
                   </button>
                 )}

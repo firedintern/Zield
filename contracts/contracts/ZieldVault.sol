@@ -27,12 +27,6 @@ import {IStrategy} from "../interfaces/IStrategy.sol";
  *   off-chain optimizer so we can iterate the model without upgrading contracts constantly.
  * - Strong emphasis on safety: pausable, reentrancy guards, minimum deposit size, withdrawal
  *   cooldown window (simple version for MVP), and explicit harvest-before-rebalance.
- *
- * Future (post-MVP):
- * - Multiple assets / multi-asset vaults
- * - On-chain risk parameter validation with timelocks
- * - Better withdrawal queue / liquidity bucketing
- * - Fee module (performance + management) with protocol-owned liquidity
  */
 contract ZieldVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for ERC20;
@@ -73,6 +67,18 @@ contract ZieldVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
     /// @notice Simple withdrawal fee in basis points (0 = none). Can be used for protocol revenue.
     uint16 public withdrawalFeeBps = 0;
 
+    /// @notice Address that receives performance fees
+    address public feeRecipient;
+
+    /// @notice Performance fee in basis points (default 1000 = 10%)
+    uint16 public performanceFeeBps = 1000;
+
+    /// @notice Total fees collected lifetime (for dashboard display)
+    uint256 public totalFeesCollected;
+
+    /// @notice TVL snapshot taken at the end of the last rebalance (used to compute yield delta)
+    uint256 public lastRebalanceTotalAssets;
+
     // ------------------------------------------------------------------
     // Events
     // ------------------------------------------------------------------
@@ -84,6 +90,9 @@ contract ZieldVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
     event Rebalanced(uint256 totalAssetsBefore, uint256 totalAssetsAfter, uint256 timestamp);
     event Harvested(address indexed strategy, uint256 amount);
     event MinDepositUpdated(uint256 oldMin, uint256 newMin);
+    event FeesCollected(address indexed recipient, uint256 amount, uint256 yieldDelta);
+    event FeeRecipientUpdated(address indexed oldRecipient, address indexed newRecipient);
+    event PerformanceFeeBpsUpdated(uint16 oldBps, uint16 newBps);
 
     // ------------------------------------------------------------------
     // Errors
@@ -97,6 +106,7 @@ contract ZieldVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
     error BelowMinDeposit();
     error RebalanceTooFrequent();
     error AllocationSumMismatch();
+    error InvalidFeeRecipient();
 
     // ------------------------------------------------------------------
     // Modifiers
@@ -119,6 +129,7 @@ contract ZieldVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
         address initialOwner_
     ) ERC4626(ERC20(asset_)) ERC20(name_, symbol_) Ownable(initialOwner_) {
         keeper = initialKeeper_;
+        feeRecipient = initialOwner_;
         lastRebalanceTimestamp = block.timestamp;
     }
 
@@ -243,18 +254,20 @@ contract ZieldVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
      *
      * Flow:
      * 1. Harvest everything first (so we have fresh yield numbers).
-     * 2. For strategies that are overweight, withdraw down to (or below) their new target.
-     * 3. For strategies that are underweight, deposit up to their new target using idle + withdrawn funds.
-     *
-     * This is deliberately simple for MVP. A more sophisticated version would:
-     * - Calculate exact amounts to move to minimize gas
-     * - Respect withdrawal queues / cooldowns
-     * - Only rebalance when net benefit > estimated gas cost (passed in or simulated off-chain)
+     * 2. Take a performance fee on any positive yield since the last rebalance.
+     * 3. For strategies that are overweight, withdraw down to (or below) their new target.
+     * 4. For strategies that are underweight, deposit up to their new target using idle + withdrawn funds.
      */
     function rebalance() external onlyKeeperOrOwner whenNotPaused nonReentrant {
         harvestAll();
 
         uint256 tvlBefore = totalAssets();
+
+        // Collect performance fee on yield since last rebalance
+        _collectPerformanceFee(tvlBefore);
+
+        // Refresh tvl after fee extraction
+        uint256 tvlForAllocation = totalAssets();
         uint256 idle = ERC20(asset()).balanceOf(address(this));
 
         uint256 len = strategies.length;
@@ -263,7 +276,7 @@ contract ZieldVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
         for (uint256 i = 0; i < len; i++) {
             IStrategy s = strategies[i];
             uint256 current = s.totalAssets();
-            uint256 target = (tvlBefore * targetAllocationBps[s]) / 10000;
+            uint256 target = (tvlForAllocation * targetAllocationBps[s]) / 10000;
 
             if (current > target) {
                 uint256 excess = current - target;
@@ -277,7 +290,7 @@ contract ZieldVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
         for (uint256 i = 0; i < len; i++) {
             IStrategy s = strategies[i];
             uint256 current = s.totalAssets();
-            uint256 target = (tvlBefore * targetAllocationBps[s]) / 10000;
+            uint256 target = (tvlForAllocation * targetAllocationBps[s]) / 10000;
 
             if (current < target && idle > 0) {
                 uint256 needed = target - current;
@@ -290,9 +303,8 @@ contract ZieldVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
             }
         }
 
-        // Any remaining idle stays in the vault (will be deployed on next rebalance or user action)
-
         lastRebalanceTimestamp = block.timestamp;
+        lastRebalanceTotalAssets = totalAssets();
 
         uint256 tvlAfter = totalAssets();
         emit Rebalanced(tvlBefore, tvlAfter, block.timestamp);
@@ -343,6 +355,18 @@ contract ZieldVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
         withdrawalFeeBps = newFeeBps;
     }
 
+    function setFeeRecipient(address newRecipient) external onlyOwner {
+        if (newRecipient == address(0)) revert InvalidFeeRecipient();
+        emit FeeRecipientUpdated(feeRecipient, newRecipient);
+        feeRecipient = newRecipient;
+    }
+
+    function setPerformanceFeeBps(uint16 newFeeBps) external onlyOwner {
+        require(newFeeBps <= 3000, "Fee too high"); // Max 30%
+        emit PerformanceFeeBpsUpdated(performanceFeeBps, newFeeBps);
+        performanceFeeBps = newFeeBps;
+    }
+
     function pause() external onlyOwner {
         _pause();
     }
@@ -369,6 +393,27 @@ contract ZieldVault is ERC4626, Ownable, Pausable, ReentrancyGuard {
             sum += targetAllocationBps[strategies[i]];
         }
         if (sum != 10000) revert AllocationSumMismatch();
+    }
+
+    /// @dev Take performance fee on yield earned since last rebalance.
+    /// Only fires if TVL grew (no fee on losses) and feeRecipient + fee > 0.
+    function _collectPerformanceFee(uint256 currentTvl) internal {
+        if (performanceFeeBps == 0 || feeRecipient == address(0)) return;
+        if (lastRebalanceTotalAssets == 0 || currentTvl <= lastRebalanceTotalAssets) return;
+
+        uint256 yieldDelta = currentTvl - lastRebalanceTotalAssets;
+        uint256 fee = (yieldDelta * performanceFeeBps) / 10000;
+        if (fee == 0) return;
+
+        // Cap fee at idle balance to avoid pulling from strategies mid-rebalance
+        uint256 idle = ERC20(asset()).balanceOf(address(this));
+        if (fee > idle) fee = idle;
+        if (fee == 0) return;
+
+        ERC20(asset()).safeTransfer(feeRecipient, fee);
+        totalFeesCollected += fee;
+
+        emit FeesCollected(feeRecipient, fee, yieldDelta);
     }
 
     // ------------------------------------------------------------------

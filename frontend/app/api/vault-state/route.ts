@@ -10,6 +10,9 @@ const VAULT_ABI = parseAbi([
   'function totalAssets() view returns (uint256)',
   'function strategies(uint256 i) view returns (address)',
   'function targetAllocationBps(address) view returns (uint16)',
+  'function totalFeesCollected() view returns (uint256)',
+  'function performanceFeeBps() view returns (uint16)',
+  'function lastRebalanceTotalAssets() view returns (uint256)',
 ]);
 
 const STRATEGY_ABI = parseAbi([
@@ -35,9 +38,12 @@ export async function GET() {
     const chain = CHAIN_ID === 84532 ? baseSepolia : base;
     const client = createPublicClient({ chain, transport: http(RPC_URL) });
 
-    const totalAssets = await client.readContract({
-      address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: 'totalAssets',
-    });
+    const [totalAssets, totalFeesCollected, performanceFeeBps, lastRebalanceTotalAssets] = await Promise.all([
+      client.readContract({ address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: 'totalAssets' }),
+      client.readContract({ address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: 'totalFeesCollected' }).catch(() => 0n),
+      client.readContract({ address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: 'performanceFeeBps' }).catch(() => 1000n),
+      client.readContract({ address: VAULT_ADDRESS, abi: VAULT_ABI, functionName: 'lastRebalanceTotalAssets' }).catch(() => 0n),
+    ]);
 
     const strategies = [];
     for (let i = 0; i < 10; i++) {
@@ -70,6 +76,10 @@ export async function GET() {
       configured: true,
       totalAssets: Number(totalAssets),
       totalAssetsUsd: Number(totalAssets) / 1e6,
+      totalFeesCollected: Number(totalFeesCollected),
+      totalFeesCollectedUsd: Number(totalFeesCollected) / 1e6,
+      performanceFeeBps: Number(performanceFeeBps),
+      lastRebalanceTotalAssets: Number(lastRebalanceTotalAssets),
       strategies,
       timestamp: Date.now(),
     });

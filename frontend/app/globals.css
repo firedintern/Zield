@@ -1,204 +1,491 @@
 @import "tailwindcss";
 
 :root {
-  /* ── Zield Design Tokens v2 — calm, premium, trustworthy ───────── */
+  /* ── Huly Design System — exact tokens ──────────────────────────── */
 
   /* Surfaces */
-  --z-bg-0: #0a0b0f;
-  --z-bg-1: #0e1015;
-  --z-bg-2: #13151c;
+  --color-obsidian-canvas: #303236;   /* page bg */
+  --color-void: #090a0c;              /* deepest — hero beam base */
+  --color-charcoal-card: #111111;
+  --color-card: #111111;              /* alias */
+  --color-slate-edge: #4a4b50;
+  --color-iron-veil: #6b6c6d;
 
   /* Text */
-  --z-text-primary: #f5f6f7;
-  --z-text-secondary: #9ba1ad;
-  --z-text-tertiary: #5d6470;
+  --color-snow: #ffffff;
+  --color-smoke: #95979e;
+  --color-ash: #a9a9aa;
+  --color-frost: #d1d1d1;
+  --color-linen: #e5e5e7;
 
-  /* Accent — refined emerald/teal */
-  --z-accent: #2dd4a7;
-  --z-accent-dim: #10b981;
-  --z-accent-soft: rgba(45, 212, 167, 0.1);
+  /* Accents */
+  --color-electric-iris: #5683da;
+  --color-iris: #5683da;              /* alias */
+  --color-iris-soft: rgba(86, 131, 218, 0.10);
+  --color-iris-dim: rgba(86, 131, 218, 0.18);
+  --color-ember-pulse: #ff8964;
+  --color-ember: #ff8964;             /* alias */
+  --color-ember-soft: rgba(255, 137, 100, 0.12);
+  --color-molasses: #5a250a;
 
-  /* Risk scale (low → critical) */
-  --z-risk-1: #34d399;
-  --z-risk-2: #a3e635;
-  --z-risk-3: #fbbf24;
-  --z-risk-4: #fb923c;
-  --z-risk-5: #f87171;
+  /* Risk scale */
+  --risk-low: #34d399;
+  --risk-med: #a3e635;
+  --risk-mid: #fbbf24;
+  --risk-high: #fb923c;
+  --risk-crit: #f87171;
 
-  --z-warning: #fbbf24;
-  --z-danger: #f87171;
-  --z-info: #60a5fa;
+  /* Semantic */
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+  --color-info: #60a5fa;
+  --color-canvas: #303236;
 
-  /* Hairlines */
-  --z-border: rgba(255, 255, 255, 0.06);
-  --z-border-strong: rgba(255, 255, 255, 0.1);
+  /* Borders */
+  --border: rgba(74, 75, 80, 0.7);
+  --border-strong: rgba(74, 75, 80, 1);
 
-  --z-radius: 20px;
-  --z-radius-sm: 12px;
+  /* Radius — system is pill-first */
+  --radius-buttons: 9999px;
+  --radius-tags: 9999px;
+  --radius-cards: 12px;
+  --radius-inputs: 4px;
+  --radius-panels: 30px;
+  --radius-btn: 9999px;
+  --radius-card: 12px;
 
-  --background: var(--z-bg-0);
-  --foreground: var(--z-text-primary);
+  /* Shadows */
+  --shadow-sm: rgba(0,0,0,0.15) 0px 4px 6px 0px;
+  --shadow-md: rgba(0,0,0,0.35) 0px 4px 16px 0px;
+  --shadow-xl: rgba(0,0,0,0.5) 0px 6px 25px 0px;
+  --shadow-subtle: rgba(255,255,255,0.4) 0px 0px 0px 6px;
+
+  /* Typography scale */
+  --text-display: 80px;
+  --leading-display: 0.9;
+  --tracking-display: -4px;
+  --text-display-sm: 32px;
+  --leading-display-sm: 1;
+  --tracking-display-sm: -1.6px;
+
+  /* Layout */
+  --page-max-width: 1200px;
+  --section-gap: 96px;
+  --card-padding: 24px;
+  --element-gap: 12px;
+
+  /* Legacy --z-* aliases — keep so existing vault components compile */
+  --z-bg-0: var(--color-obsidian-canvas);
+  --z-bg-1: #0e0f12;
+  --z-bg-2: var(--color-charcoal-card);
+  --z-text-primary: var(--color-snow);
+  --z-text-secondary: var(--color-smoke);
+  --z-text-tertiary: var(--color-iron-veil);
+  --z-accent: var(--color-electric-iris);
+  --z-accent-dim: var(--color-iris-dim);
+  --z-accent-soft: var(--color-iris-soft);
+  --z-risk-1: var(--risk-low);
+  --z-risk-2: var(--risk-med);
+  --z-risk-3: var(--risk-mid);
+  --z-risk-4: var(--risk-high);
+  --z-risk-5: var(--risk-crit);
+  --z-warning: var(--color-warning);
+  --z-danger: var(--color-danger);
+  --z-info: var(--color-info);
+  --z-border: var(--border);
+  --z-border-strong: var(--border-strong);
+  --z-radius: var(--radius-card);
+  --z-radius-sm: 8px;
+
+  --background: var(--color-obsidian-canvas);
+  --foreground: var(--color-snow);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-sora);
   --font-mono: var(--font-geist-mono);
+
+  --color-obsidian-canvas: #303236;
+  --color-void: #090a0c;
+  --color-charcoal-card: #111111;
+  --color-card: #111111;
+  --color-slate-edge: #4a4b50;
+  --color-smoke: #95979e;
+  --color-ash: #a9a9aa;
+  --color-snow: #ffffff;
+  --color-iris: #5683da;
+  --color-ember: #ff8964;
+  --color-electric-iris: #5683da;
+  --color-ember-pulse: #ff8964;
 }
 
 body {
-  background-color: var(--z-bg-0);
-  color: var(--z-text-primary);
-  font-family: var(--font-geist-sans);
+  background-color: var(--color-obsidian-canvas);
+  color: var(--color-snow);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: -0.14px;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Ambient backdrop: faint emerald glow + ultra-subtle grid */
+/* ── Aurora hero — faithful Huly beam ───────────────────────────── */
+/*
+ * The hero sits on #090a0c void. The signature is a narrow vertical
+ * light streak (iris→white core→ember) with a warm radial sunburst
+ * at the base. Everything breathes with keyframe animation.
+ */
+
+@keyframes aurora-breathe {
+  0%, 100% { opacity: 1; transform: scaleX(1); }
+  50%       { opacity: 0.85; transform: scaleX(1.06); }
+}
+
+@keyframes aurora-drift {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50%       { transform: translateY(-8px) scaleY(1.02); }
+}
+
+@keyframes sunburst-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%       { opacity: 0.8; transform: scale(1.12); }
+}
+
+@keyframes beam-glow {
+  0%, 100% { opacity: 0.9; }
+  50%       { opacity: 0.6; }
+}
+
+.aurora-bg {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-void);
+}
+
+/* Narrow vertical iris→white core */
+.aurora-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    /* white core — the streak's spine */
+    radial-gradient(ellipse 8% 55% at 50% 0%, rgba(255,255,255,0.90) 0%, rgba(255,255,255,0.15) 40%, transparent 70%),
+    /* iris cool halo */
+    radial-gradient(ellipse 28% 65% at 50% 0%, rgba(86,131,218,0.75) 0%, rgba(86,131,218,0.20) 50%, transparent 72%),
+    /* outer iris bloom */
+    radial-gradient(ellipse 55% 45% at 50% 0%, rgba(86,131,218,0.30) 0%, transparent 65%);
+  pointer-events: none;
+  animation: aurora-breathe 6s ease-in-out infinite;
+}
+
+/* Ember warm stop lower on the beam */
+.aurora-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    /* ember colour at mid-beam */
+    radial-gradient(ellipse 18% 35% at 50% 38%, rgba(255,137,100,0.55) 0%, rgba(255,137,100,0.10) 55%, transparent 70%),
+    /* warm sunburst at base */
+    radial-gradient(ellipse 60% 30% at 50% 68%, rgba(255,170,129,0.45) 0%, rgba(255,218,159,0.20) 45%, transparent 70%);
+  pointer-events: none;
+  animation: aurora-drift 8s ease-in-out infinite, sunburst-pulse 5s ease-in-out infinite;
+}
+
+/* ── App backdrop — quieter aurora tint for inner pages ─────────── */
 .z-backdrop {
+  background-color: var(--color-obsidian-canvas);
   background-image:
-    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(45, 212, 167, 0.07), transparent 70%),
-    linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-  background-size: 100% 100%, 64px 64px, 64px 64px;
+    radial-gradient(ellipse 60% 40% at 50% -8%, rgba(86,131,218,0.12) 0%, transparent 65%),
+    radial-gradient(ellipse 40% 20% at 50% -2%, rgba(255,137,100,0.06) 0%, transparent 55%);
 }
 
 /* ── Cards ──────────────────────────────────────────────────────── */
 
 .z-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.012));
-  border: 1px solid var(--z-border);
-  border-radius: var(--z-radius);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 12px 32px -16px rgba(0, 0, 0, 0.5);
+  background: var(--color-charcoal-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-cards);
+  box-shadow: var(--shadow-sm);
 }
 
 .z-card-hero {
-  background:
-    radial-gradient(ellipse 60% 120% at 50% -20%, rgba(45, 212, 167, 0.08), transparent 60%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.012));
-  border: 1px solid rgba(45, 212, 167, 0.14);
-  border-radius: var(--z-radius);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 16px 48px -20px rgba(0, 0, 0, 0.6);
+  background: var(--color-charcoal-card);
+  border: 1px solid rgba(86,131,218,0.28);
+  border-radius: var(--radius-cards);
+  box-shadow: 0 0 0 1px rgba(86,131,218,0.08) inset, var(--shadow-md);
 }
 
 .z-inset {
-  background: rgba(0, 0, 0, 0.28);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--z-radius-sm);
+  background: rgba(0,0,0,0.28);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-inputs);
 }
 
-/* ── Type helpers ───────────────────────────────────────────────── */
+/* ── Feature card with ember glow ───────────────────────────────── */
+.z-feature-card {
+  position: relative;
+  background: var(--color-charcoal-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-cards);
+  overflow: hidden;
+}
+.z-feature-card::before {
+  content: '';
+  position: absolute;
+  bottom: -40px; right: -40px;
+  width: 200px; height: 200px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(255,137,100,0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+.z-feature-card:hover::before {
+  background: radial-gradient(circle, rgba(255,137,100,0.30) 0%, transparent 70%);
+  transition: background 0.3s;
+}
+
+/* ── Typography helpers ─────────────────────────────────────────── */
 
 .z-num {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
-  letter-spacing: -0.02em;
 }
 
 .z-label {
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--z-text-tertiary);
+  color: var(--color-smoke);
   font-weight: 500;
 }
 
-/* ── Buttons ────────────────────────────────────────────────────── */
+/* Esbuild substitute — Sora at display sizes */
+.display-heading {
+  font-family: var(--font-sora), 'Sora', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-display);
+}
+
+.display-heading-sm {
+  font-family: var(--font-sora), 'Sora', ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: var(--tracking-display-sm);
+  line-height: var(--leading-display-sm);
+}
+
+/* ── Buttons — pill-first system ────────────────────────────────── */
 
 .z-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-buttons);
   font-weight: 500;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease, opacity 0.15s ease;
+  font-size: 14px;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s, filter 0.15s, box-shadow 0.2s;
   cursor: pointer;
+  white-space: nowrap;
 }
-.z-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.z-btn:active:not(:disabled) { transform: scale(0.98); }
+.z-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.z-btn:active:not(:disabled) { filter: brightness(0.88); }
 
-.z-btn-ghost {
-  border: 1px solid var(--z-border-strong);
-  color: var(--z-text-secondary);
-  background: rgba(255, 255, 255, 0.02);
-}
-.z-btn-ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.06); color: var(--z-text-primary); }
-
-.z-btn-accent {
-  border: 1px solid rgba(45, 212, 167, 0.3);
-  color: var(--z-accent);
-  background: var(--z-accent-soft);
-}
-.z-btn-accent:hover:not(:disabled) { background: rgba(45, 212, 167, 0.18); }
-
+/* Primary — Electric Iris fill */
 .z-btn-primary {
-  background: linear-gradient(180deg, #3ce0b4, #19c79a);
-  color: #04110c;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 24px -10px rgba(45, 212, 167, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-}
-.z-btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
-
-.z-btn-solid {
-  background: #f5f6f7;
-  color: #0a0b0f;
+  background: var(--color-electric-iris);
+  color: #fff;
   border: 1px solid transparent;
 }
-.z-btn-solid:hover:not(:disabled) { background: #ffffff; }
+.z-btn-primary:hover:not(:disabled) {
+  background: #6a94e8;
+  box-shadow: 0 4px 24px rgba(86,131,218,0.40);
+}
+
+/* Ghost — slate-edge border */
+.z-btn-ghost {
+  border: 1px solid var(--border-strong);
+  color: var(--color-ash);
+  background: transparent;
+}
+.z-btn-ghost:hover:not(:disabled) {
+  background: rgba(255,255,255,0.06);
+  color: var(--color-snow);
+  border-color: var(--color-slate-edge);
+}
+
+/* Accent — iris tint */
+.z-btn-accent {
+  border: 1px solid rgba(86,131,218,0.35);
+  color: var(--color-electric-iris);
+  background: var(--color-iris-soft);
+}
+.z-btn-accent:hover:not(:disabled) {
+  background: var(--color-iris-dim);
+}
+
+/* Solid white — for dark section CTAs */
+.z-btn-solid {
+  background: #ffffff;
+  color: var(--color-void);
+  border: 1px solid transparent;
+  font-weight: 600;
+}
+.z-btn-solid:hover:not(:disabled) { background: #e8e8e8; }
+
+/* ── Tags / chips ────────────────────────────────────────────────── */
+
+.z-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
 
 /* ── Focus / a11y ───────────────────────────────────────────────── */
 
 :focus-visible {
-  outline: 2px solid rgba(45, 212, 167, 0.6);
+  outline: 2px solid rgba(86,131,218,0.7);
   outline-offset: 2px;
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
-/* ── Motion ─────────────────────────────────────────────────────── */
+/* ── Scroll-reveal animations ───────────────────────────────────── */
+/*
+ * Elements with .z-reveal start invisible and slide up.
+ * The IntersectionObserver in layout.tsx adds .z-revealed when
+ * they enter the viewport.
+ */
+
+.z-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+              transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.z-reveal.z-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger delays for child groups */
+.z-reveal-d1 { transition-delay: 0.08s; }
+.z-reveal-d2 { transition-delay: 0.16s; }
+.z-reveal-d3 { transition-delay: 0.24s; }
+.z-reveal-d4 { transition-delay: 0.32s; }
+.z-reveal-d5 { transition-delay: 0.40s; }
+
+/* ── Load-in animations (no JS needed) ──────────────────────────── */
 
 @keyframes z-fade-up {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
-.z-fade-up { animation: z-fade-up 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-.z-d1 { animation-delay: 0.05s; }
-.z-d2 { animation-delay: 0.1s; }
-.z-d3 { animation-delay: 0.16s; }
-.z-d4 { animation-delay: 0.22s; }
+.z-fade-up { animation: z-fade-up 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.z-d1 { animation-delay: 0.07s; }
+.z-d2 { animation-delay: 0.14s; }
+.z-d3 { animation-delay: 0.21s; }
+.z-d4 { animation-delay: 0.28s; }
+.z-d5 { animation-delay: 0.35s; }
+
+/* ── Skeleton shimmer ───────────────────────────────────────────── */
 
 @keyframes z-shimmer {
-  from { background-position: -400px 0; }
-  to { background-position: 400px 0; }
+  from { background-position: -500px 0; }
+  to   { background-position:  500px 0; }
 }
 .z-skeleton {
-  border-radius: 10px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
-  background-size: 800px 100%;
-  animation: z-shimmer 1.4s linear infinite;
+  border-radius: var(--radius-cards);
+  background: linear-gradient(90deg,
+    rgba(255,255,255,0.03) 25%,
+    rgba(255,255,255,0.07) 50%,
+    rgba(255,255,255,0.03) 75%);
+  background-size: 1000px 100%;
+  animation: z-shimmer 1.6s linear infinite;
 }
+
+/* ── Live pulse dot ─────────────────────────────────────────────── */
 
 @keyframes z-pulse-dot {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(45, 212, 167, 0.45); }
-  50% { box-shadow: 0 0 0 5px rgba(45, 212, 167, 0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(86,131,218,0.55); }
+  60%       { box-shadow: 0 0 0 5px rgba(86,131,218,0); }
 }
 .z-live-dot {
+  display: inline-block;
+  flex-shrink: 0;
   width: 6px;
   height: 6px;
-  border-radius: 999px;
-  background: var(--z-accent);
-  animation: z-pulse-dot 2s ease-in-out infinite;
+  border-radius: 9999px;
+  background: var(--color-electric-iris);
+  animation: z-pulse-dot 2.2s ease-in-out infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .z-fade-up, .z-skeleton, .z-live-dot { animation: none; }
+@keyframes z-pulse-dot-ember {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,137,100,0.55); }
+  60%       { box-shadow: 0 0 0 5px rgba(255,137,100,0); }
+}
+.z-ember-dot {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-ember-pulse);
+  animation: z-pulse-dot-ember 2.2s ease-in-out infinite;
 }
 
-/* Hide number input spinners (amount fields) */
+/* ── Number counter animation ───────────────────────────────────── */
+
+@keyframes z-count-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.z-count-in {
+  animation: z-count-in 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* ── Gradient text ──────────────────────────────────────────────── */
+
+.z-gradient-text {
+  background: linear-gradient(135deg, var(--color-electric-iris) 0%, #8fa8e8 50%, var(--color-ember-pulse) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Hover lift on cards ─────────────────────────────────────────── */
+
+.z-card-lift {
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s;
+}
+.z-card-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ── Input styles ───────────────────────────────────────────────── */
+
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+
+/* ── Reduced motion ─────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .z-fade-up,
+  .z-skeleton,
+  .z-live-dot,
+  .z-ember-dot,
+  .z-count-in,
+  .aurora-bg::before,
+  .aurora-bg::after { animation: none; }
+  .z-reveal { opacity: 1; transform: none; transition: none; }
+}

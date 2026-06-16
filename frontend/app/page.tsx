@@ -184,7 +184,6 @@ export default function ZieldDashboard() {
   const [showSimModal, setShowSimModal] = useState(false);
 
   const [activities, setActivities] = useState<any[]>([]);
-  const [activitiesIsDemo, setActivitiesIsDemo] = useState(true);
   const [vaultState, setVaultState] = useState<any>(null);
 
   const { address, isConnected } = useAccount();
@@ -240,7 +239,6 @@ export default function ZieldDashboard() {
       const res = await fetch('/api/recent-activity');
       const data = await res.json();
       setActivities(data.activities || []);
-      setActivitiesIsDemo(data.isDemo ?? true);
     } catch {
       setActivities([]);
     }
@@ -540,7 +538,7 @@ export default function ZieldDashboard() {
             <div className="mb-6 flex items-center justify-between">
               <div className="flex items-center gap-2.5 text-sm font-medium">
                 <Shield className="h-4 w-4 text-[var(--z-text-secondary)]" />
-                Target allocation
+                {vaultState?.strategies?.length > 0 ? 'Vault allocation' : 'Keeper recommendation'}
               </div>
               <div className="rounded-full border border-[var(--z-border)] bg-white/[0.03] px-3 py-1 text-[11px] text-[var(--z-text-secondary)]">
                 {displayTvl !== null
@@ -590,36 +588,42 @@ export default function ZieldDashboard() {
               </>
             )}
 
-            {/* Strategy rows */}
+            {/* Strategy rows — on-chain when available, optimizer recommendation otherwise */}
             <div className="space-y-1.5">
-              {decision.allocations.map((strat, i) => {
-                const onchainStrat = vaultState?.strategies?.find((s: any) => s.targetPct === strat.targetPct);
-                const expanded = expandedStrategy === strat.project;
+              {(vaultState?.strategies?.length > 0 ? vaultState.strategies : decision.allocations).map((strat: any, i: number) => {
+                const isOnchain = vaultState?.strategies?.length > 0;
+                const name = isOnchain ? strat.name : strat.name;
+                const apy = isOnchain ? (strat.apyBps / 100) : strat.apy;
+                const risk = isOnchain ? strat.riskScore : strat.compositeRisk;
+                const pct = isOnchain ? strat.targetPct : strat.targetPct;
+                const rationale = isOnchain ? `${(strat.currentAssets / 1e6).toFixed(4)} USDC deployed` : strat.rationale;
+                const poolTvl = isOnchain ? null : strat.tvlUsd;
+                const riskVec = isOnchain ? null : strat.risk;
+                const key = isOnchain ? strat.address : strat.project;
+                const expanded = expandedStrategy === key;
                 return (
-                  <div key={strat.project} className={`rounded-2xl border transition-colors duration-200 ${expanded ? 'border-[var(--z-border-strong)] bg-white/[0.03]' : 'border-transparent hover:bg-white/[0.025]'}`}>
+                  <div key={key} className={`rounded-2xl border transition-colors duration-200 ${expanded ? 'border-[var(--z-border-strong)] bg-white/[0.03]' : 'border-transparent hover:bg-white/[0.025]'}`}>
                     <button
-                      onClick={() => setExpandedStrategy(expanded ? null : strat.project)}
+                      onClick={() => setExpandedStrategy(expanded ? null : key)}
                       className="flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-left"
                       aria-expanded={expanded}
                     >
                       <span className="h-8 w-1 shrink-0 rounded-full" style={{ background: ALLOCATION_PALETTE[i % ALLOCATION_PALETTE.length] }} />
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium">{strat.name}</span>
+                        <span className="block truncate text-sm font-medium">{name}</span>
                         <span className="mt-0.5 block text-[11px] text-[var(--z-text-tertiary)]">
-                          {strat.tvlUsd > 0 ? `Pool TVL $${(strat.tvlUsd / 1e6).toFixed(1)}M` : 'On-chain read'}
+                          {poolTvl && poolTvl > 0 ? `Pool TVL $${(poolTvl / 1e6).toFixed(1)}M` : 'On-chain strategy'}
                         </span>
                       </span>
-                      <span className="z-num hidden font-mono text-sm text-[var(--z-accent)] sm:block">
-                        {onchainStrat ? (onchainStrat.apyBps / 100).toFixed(2) : strat.apy.toFixed(2)}%
-                      </span>
-                      <RiskPill value={strat.compositeRisk} />
-                      <span className="z-num w-12 text-right font-mono text-sm font-semibold">{strat.targetPct}%</span>
+                      <span className="z-num hidden font-mono text-sm text-[var(--z-accent)] sm:block">{apy.toFixed(2)}%</span>
+                      <RiskPill value={risk} />
+                      <span className="z-num w-12 text-right font-mono text-sm font-semibold">{pct.toFixed(0)}%</span>
                       <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-[var(--z-text-tertiary)] transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
                     </button>
                     {expanded && (
                       <div className="px-5 pb-5 pt-1">
-                        <RiskVectorBars risk={strat.risk} />
-                        <p className="mt-4 text-xs leading-relaxed text-[var(--z-text-secondary)]">{strat.rationale}</p>
+                        {riskVec && <RiskVectorBars risk={riskVec} />}
+                        <p className="mt-4 text-xs leading-relaxed text-[var(--z-text-secondary)]">{rationale}</p>
                       </div>
                     )}
                   </div>
@@ -827,9 +831,9 @@ export default function ZieldDashboard() {
         <section className="z-card mt-6 p-6 sm:p-7">
           <div className="mb-4 flex items-center justify-between">
             <div className="text-sm font-medium">Vault activity</div>
-            {activitiesIsDemo && (
+            {!vaultReady && (
               <span className="rounded-full border border-[rgba(251,191,36,0.25)] bg-[rgba(251,191,36,0.07)] px-2.5 py-0.5 text-[10px] font-medium text-[var(--z-warning)]">
-                Demo data
+                Vault not deployed
               </span>
             )}
           </div>

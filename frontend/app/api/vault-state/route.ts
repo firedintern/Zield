@@ -19,11 +19,11 @@ const STRATEGY_ABI = parseAbi([
   'function isActive() view returns (bool)',
 ]);
 
-// Strategy name registry — maps address to human name for Sepolia mocks
-const STRATEGY_NAMES: Record<string, string> = {
-  '0x9b3ef0c9782fbbbb372fc09a03875ba259b57843': 'Mock Aave USDC',
-  '0x52026b04664c28aaba8450e0ba5243e3f5d7eb83': 'Conservative Yield',
-  '0xa9df4fc5d0d7bbff511275a7f43a6b83f14f8ef9': 'High Yield',
+// Strategy name registry — maps deployed address to display name
+const STRATEGY_NAMES: Record<string, { name: string; protocol: string }> = {
+  '0x9b3ef0c9782fbbbb372fc09a03875ba259b57843': { name: 'Aave USDC (Testnet)', protocol: 'aave-v3' },
+  '0x52026b04664c28aaba8450e0ba5243e3f5d7eb83': { name: 'Conservative USDC (Testnet)', protocol: 'compound-v3' },
+  '0xa9df4fc5d0d7bbff511275a7f43a6b83f14f8ef9': { name: 'High Yield USDC (Testnet)', protocol: 'moonwell' },
 };
 
 export async function GET() {
@@ -50,9 +50,11 @@ export async function GET() {
           client.readContract({ address: addr, abi: STRATEGY_ABI, functionName: 'riskScore' }),
           client.readContract({ address: addr, abi: STRATEGY_ABI, functionName: 'isActive' }),
         ]);
+        const meta = STRATEGY_NAMES[addr.toLowerCase()];
         strategies.push({
           address: addr,
-          name: STRATEGY_NAMES[addr.toLowerCase()] ?? `Strategy ${i + 1}`,
+          name: meta?.name ?? `Strategy ${i + 1}`,
+          protocol: meta?.protocol ?? 'unknown',
           targetBps: Number(bps),
           targetPct: Number(bps) / 100,
           currentAssets: Number(stratAssets),

@@ -4,7 +4,7 @@
 
 **Live dashboard:** https://zield-nu.vercel.app — every number is computed live from Base mainnet (Aave v3 on-chain reads) and real market data (DefiLlama), scored by the Zield risk model.
 
-Built with Grok
+Built with Grok and Claude
 
 ![Zield Dashboard](screenshots/zield-dashboard.png)
 

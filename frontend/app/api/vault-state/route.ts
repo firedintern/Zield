@@ -24,9 +24,9 @@ const STRATEGY_ABI = parseAbi([
 
 // Strategy name registry — maps deployed address to display name
 const STRATEGY_NAMES: Record<string, { name: string; protocol: string }> = {
-  '0x9b3ef0c9782fbbbb372fc09a03875ba259b57843': { name: 'Aave USDC (Testnet)', protocol: 'aave-v3' },
-  '0x52026b04664c28aaba8450e0ba5243e3f5d7eb83': { name: 'Conservative USDC (Testnet)', protocol: 'compound-v3' },
-  '0xa9df4fc5d0d7bbff511275a7f43a6b83f14f8ef9': { name: 'High Yield USDC (Testnet)', protocol: 'moonwell' },
+  '0x072287825f3535d37d5d3ccccc238e744d61d56b': { name: 'Aave v3 USDC (Simulated)', protocol: 'aave-v3' },
+  '0xf4efb4b2a39abcc610fcb44e9650e673de76719b': { name: 'Conservative USDC', protocol: 'compound-v3' },
+  '0x4f86a0e35fec4bfd16f308af60414ad724c64323': { name: 'High Yield USDC', protocol: 'moonwell' },
 };
 
 export async function GET() {

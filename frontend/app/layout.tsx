@@ -1,12 +1,22 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Sora } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { Toaster } from "sonner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
+});
+
+const sora = Sora({
+  variable: "--font-sora",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -17,22 +27,13 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Zield | Risk-Aware Yield Vault",
   description: "Automated, risk-adjusted yield optimization on Base. The keeper that doesn't chase raw APY.",
-  icons: {
-    icon: "/favicon.ico",
-  },
+  icons: { icon: "/favicon.ico" },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-zinc-950 text-white">
+    <html lang="en" className={`${inter.variable} ${sora.variable} ${geistMono.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col" style={{ background: 'var(--color-void)', color: 'var(--color-snow)' }}>
         <Providers>{children}</Providers>
         <Toaster theme="dark" position="bottom-right" richColors />
       </body>
